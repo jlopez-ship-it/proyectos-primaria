@@ -1,0 +1,991 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Montacargas 3D - Bodega Instituto Asís</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white">
+
+
+    <!-- Contenedor del Canvas de 3D -->
+    <div id="canvas-container"></div>
+
+
+    <!-- UI - Interfaz del Juego -->
+    <div class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4">
+        
+        <!-- Header: Título y Datos de Misión -->
+        <div class="flex justify-between items-start w-full">
+            <div class="bg-slate-900/90 backdrop-blur border border-indigo-500/30 p-3 rounded-2xl pointer-events-auto shadow-lg max-w-xs">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="p-1.5 bg-indigo-600 rounded-lg text-white">
+                        <i data-lucide="truck" class="w-5 h-5"></i>
+                    </span>
+                    <div>
+                        <h1 class="font-bold text-sm tracking-wide leading-tight text-white">Bodega Asís 3D</h1>
+                        <p class="text-[10px] text-indigo-300">Simulador de Montacargas</p>
+                    </div>
+                </div>
+                <div class="mt-2 text-xs text-slate-300 border-t border-slate-800 pt-2">
+                    <span class="text-amber-400 font-bold">Misión:</span> Lleva la caja de libros al estante brillante.
+                </div>
+            </div>
+
+
+            <!-- Score y Tiempo -->
+            <div class="flex gap-2">
+                <div class="bg-slate-900/90 backdrop-blur border border-indigo-500/30 px-4 py-2 rounded-2xl pointer-events-auto text-center shadow-lg">
+                    <p class="text-[10px] text-indigo-300 font-bold uppercase">Entregas</p>
+                    <p id="score" class="text-xl font-black text-emerald-400">0 / 3</p>
+                </div>
+                <div class="bg-slate-900/90 backdrop-blur border border-indigo-500/30 px-4 py-2 rounded-2xl pointer-events-auto text-center shadow-lg">
+                    <p class="text-[10px] text-indigo-300 font-bold uppercase">Tiempo</p>
+                    <p id="timer" class="text-xl font-black text-amber-400">02:00</p>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Alertas de Estado del Montacargas -->
+        <div class="self-center flex flex-col items-center gap-2">
+            <div id="status-toast" class="hidden bg-emerald-600/95 backdrop-blur text-white font-bold px-4 py-2 rounded-xl border border-emerald-400 text-sm shadow-xl animate-bounce pointer-events-auto">
+                ¡Caja Cargada con Éxito! Llévala al estante.
+            </div>
+            <div id="info-tip" class="bg-slate-900/85 backdrop-blur text-indigo-200 text-xs px-3 py-1.5 rounded-full border border-indigo-800/50 flex items-center gap-1">
+                <i data-lucide="mouse-pointer" class="w-3.5 h-3.5"></i>
+                Usa el mouse para arrastrar y cambiar el ángulo de cámara.
+            </div>
+        </div>
+
+
+        <!-- Footer: Controles de Juego -->
+        <div class="flex justify-between items-end w-full">
+            <!-- Controles de las Horquillas (Subir/Bajar) -->
+            <div class="flex flex-col gap-2 pointer-events-auto">
+                <p class="text-[10px] font-bold text-center text-indigo-300 uppercase bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-800">Horquillas</p>
+                <div class="flex flex-col gap-1.5">
+                    <button id="btn-fork-up" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg border border-indigo-400/20">
+                        <i data-lucide="chevrons-up" class="w-6 h-6"></i>
+                        <span class="text-[8px] font-bold uppercase">Subir</span>
+                    </button>
+                    <button id="btn-fork-down" class="w-14 h-14 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-2xl flex flex-col items-center justify-center shadow-lg border border-indigo-400/20">
+                        <i data-lucide="chevrons-down" class="w-6 h-6"></i>
+                        <span class="text-[8px] font-bold uppercase">Bajar</span>
+                    </button>
+                </div>
+            </div>
+
+
+            <!-- Controles Táctiles de Dirección (Solo móviles, pero activos siempre) -->
+            <div class="flex gap-4 pointer-events-auto">
+                <!-- Cruceta Izquierda/Derecha (Giro de llantas) -->
+                <div class="flex gap-1.5 items-center bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+                    <button id="ctrl-left" class="w-12 h-12 bg-slate-800 active:bg-slate-700 rounded-xl flex items-center justify-center border border-slate-700">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    <button id="ctrl-right" class="w-12 h-12 bg-slate-800 active:bg-slate-700 rounded-xl flex items-center justify-center border border-slate-700">
+                        <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <!-- Cruceta Adelante/Atrás (Aceleración) -->
+                <div class="flex flex-col gap-1.5 bg-slate-900/80 p-2 rounded-2xl border border-slate-800">
+                    <button id="ctrl-forward" class="w-12 h-12 bg-slate-800 active:bg-slate-700 rounded-xl flex items-center justify-center border border-slate-700">
+                        <i data-lucide="arrow-up" class="w-6 h-6"></i>
+                    </button>
+                    <button id="ctrl-backward" class="w-12 h-12 bg-slate-800 active:bg-slate-700 rounded-xl flex items-center justify-center border border-slate-700">
+                        <i data-lucide="arrow-down" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Pantalla de Inicio / Game Over / Ganador -->
+    <div id="game-overlay" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-50">
+        <div class="bg-indigo-950/40 p-5 rounded-full border border-indigo-500 mb-4 animate-bounce">
+            <i id="overlay-icon" data-lucide="play" class="w-12 h-12 text-amber-400"></i>
+        </div>
+        <h2 id="overlay-title" class="text-3xl font-black tracking-wide text-white mb-2">Montacargas 3D Asís</h2>
+        <p id="overlay-desc" class="text-sm text-slate-300 mb-6 max-w-sm leading-relaxed">
+            Maneja el montacargas de la escuela. Recoge la tarima con libros y colócala en el estante de la bodega que brilla en color azul.
+        </p>
+        <div class="mb-6 flex flex-wrap justify-center gap-2 max-w-sm text-xs text-slate-400">
+            <span class="bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800">⌨️ Flechas / WASD: Conducir</span>
+            <span class="bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800">⌨️ Q / E: Horquillas</span>
+            <span class="bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800">🖱️ Arrastrar Mouse: Cámara</span>
+        </div>
+        <button id="btn-start" class="pointer-events-auto bg-amber-400 hover:bg-amber-500 text-indigo-950 font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-amber-500/20 transition flex items-center gap-2 text-lg">
+            <span>Iniciar Práctica 3D</span>
+            <i data-lucide="chevron-right" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+
+    <!-- Script del Motor 3D del Juego -->
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+
+
+        // Variables del Entorno Three.js
+        let scene, camera, renderer;
+        let vehicle, forks;
+        let palletWithBox;
+        let deliveryZone;
+        
+        // Estado del Juego
+        let score = 0;
+        let timeLeft = 120; // 2 Minutos
+        let timerInterval;
+        let gameRunning = false;
+        let carryingBox = false;
+
+
+        // Físicas básicas del Montacargas
+        const car = {
+            speed: 0,
+            maxSpeed: 0.15,
+            acceleration: 0.005,
+            deceleration: 0.95,
+            angle: 0,
+            rotationSpeed: 0.03,
+            forkHeight: 0.2,
+            maxForkHeight: 2.2,
+            minForkHeight: 0.1
+        };
+
+
+        // Estado de Entradas (Teclas)
+        const keys = {
+            forward: false,
+            backward: false,
+            left: false,
+            right: false,
+            forkUp: false,
+            forkDown: false
+        };
+
+
+        // Control de Cámara con Mouse (Ángulos)
+        let cameraAngleX = 0;
+        let cameraAngleY = 0.3; // Vista inclinada desde arriba
+        const cameraRadius = 8;
+        let isMouseDown = false;
+        let prevMouseX = 0;
+        let prevMouseY = 0;
+
+
+        // Inicialización de la escena 3D
+        function init() {
+            // 1. Escena con Niebla Industrial de Bodega
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            scene.fog = new THREE.FogExp2(0x0f172a, 0.04);
+
+
+            // 2. Cámara de perspectiva
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+
+            // 3. Renderizador WebGL
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+
+            // 4. Luces de la Bodega
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+
+            // Lámpara direccional gigante (simula los focos industriales)
+            const sunLight = new THREE.DirectionalLight(0xe0f2fe, 0.8);
+            sunLight.position.set(10, 20, 10);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 50;
+            const d = 15;
+            sunLight.shadow.camera.left = -d;
+            sunLight.shadow.camera.right = d;
+            sunLight.shadow.camera.top = d;
+            sunLight.shadow.camera.bottom = -d;
+            scene.add(sunLight);
+
+
+            // Luz suave para rellenar sombras
+            const fillLight = new THREE.DirectionalLight(0x3b82f6, 0.2);
+            fillLight.position.set(-10, 5, -10);
+            scene.add(fillLight);
+
+
+            // 5. Creación del Escenario
+            createEnvironment();
+
+
+            // 6. Creación del Montacargas (Jugador)
+            createMontacargas();
+
+
+            // 7. Cajas y Tarima a cargar
+            spawnPallet();
+
+
+            // 8. Eventos de Escucha (Teclado y Mouse)
+            window.addEventListener('resize', onWindowResize);
+            setupInput();
+            setupCameraControls();
+        }
+
+
+        // --- MODELADO GEOMÉTRICO 3D EN TIEMPO REAL ---
+
+
+        // Construir la bodega, pisos y estantes
+        function createEnvironment() {
+            // Piso con textura de concreto cuadriculado
+            const floorGeo = new THREE.PlaneGeometry(40, 40);
+            const floorMat = new THREE.MeshStandardMaterial({ 
+                color: 0x334155, 
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+
+            // Líneas de carriles de seguridad amarillas
+            const gridHelper = new THREE.GridHelper(40, 20, 0xfbbf24, 0x475569);
+            gridHelper.position.y = 0.01;
+            scene.add(gridHelper);
+
+
+            // Estructura de Estantes Industriales (Estantería metálica de bodega)
+            createShelves(-6, -5);
+            createShelves(6, -5);
+            createShelves(0, -10);
+
+
+            // Paredes exteriores de la bodega
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+            
+            const wallBack = new THREE.Mesh(new THREE.BoxGeometry(40, 8, 0.5), wallMat);
+            wallBack.position.set(0, 4, -20);
+            scene.add(wallBack);
+
+
+            const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 40), wallMat);
+            wallLeft.position.set(-20, 4, 0);
+            scene.add(wallLeft);
+
+
+            const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.5, 8, 40), wallMat);
+            wallRight.position.set(20, 4, 0);
+            scene.add(wallRight);
+
+
+            // Zonas de almacenamiento decorativas (pilas de cajas al fondo)
+            for (let i = 0; i < 5; i++) {
+                const stackBox = new THREE.Mesh(
+                    new THREE.BoxGeometry(1.2, 1.2, 1.2),
+                    new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.9 })
+                );
+                stackBox.position.set(-15 + Math.random()*2, 0.6, 12 + Math.random()*2);
+                stackBox.castShadow = true;
+                scene.add(stackBox);
+            }
+        }
+
+
+        // Crear una unidad de estanterías en 3D
+        function createShelves(x, z) {
+            const shelfGroup = new THREE.Group();
+            shelfGroup.position.set(x, 0, z);
+
+
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.2 }); // Vigas rojas
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.9 }); // Tablas blancas
+
+
+            // Pilares de soporte (4 patas verticales)
+            const pillarGeo = new THREE.BoxGeometry(0.15, 6, 0.15);
+            const p1 = new THREE.Mesh(pillarGeo, frameMat); p1.position.set(-2, 3, -0.6); p1.castShadow = true;
+            const p2 = new THREE.Mesh(pillarGeo, frameMat); p2.position.set(2, 3, -0.6); p2.castShadow = true;
+            const p3 = new THREE.Mesh(pillarGeo, frameMat); p3.position.set(-2, 3, 0.6); p3.castShadow = true;
+            const p4 = new THREE.Mesh(pillarGeo, frameMat); p4.position.set(2, 3, 0.6); p4.castShadow = true;
+            shelfGroup.add(p1, p2, p3, p4);
+
+
+            // Repisas horizontales (3 niveles)
+            const boardGeo = new THREE.BoxGeometry(4.2, 0.1, 1.35);
+            const level1 = new THREE.Mesh(boardGeo, boardMat); level1.position.set(0, 0.1, 0); level1.receiveShadow = true;
+            const level2 = new THREE.Mesh(boardGeo, boardMat); level2.position.set(0, 2.0, 0); level2.receiveShadow = true;
+            const level3 = new THREE.Mesh(boardGeo, boardMat); level3.position.set(0, 4.0, 0); level3.receiveShadow = true;
+            shelfGroup.add(level1, level2, level3);
+
+
+            scene.add(shelfGroup);
+
+
+            // Si es la estantería de entrega de esta ronda, agregar aro indicador brillante
+            if (x === 6 && z === -5) {
+                // Zona de entrega brillante en el segundo nivel
+                const zoneGeo = new THREE.BoxGeometry(1.8, 0.1, 1.2);
+                const zoneMat = new THREE.MeshBasicMaterial({ 
+                    color: 0x3b82f6, 
+                    transparent: true, 
+                    opacity: 0.4,
+                    wireframe: false 
+                });
+                deliveryZone = new THREE.Mesh(zoneGeo, zoneMat);
+                deliveryZone.position.set(x, 2.1, z);
+                scene.add(deliveryZone);
+
+
+                // Aro de luz pulsante decorativo
+                const ringGeo = new THREE.RingGeometry(0.8, 1, 16);
+                const ringMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.rotation.x = Math.PI/2;
+                ring.position.set(x, 0.05, z);
+                scene.add(ring);
+            }
+        }
+
+
+        // Modelar el vehículo Montacargas en 3D
+        function createMontacargas() {
+            vehicle = new THREE.Group();
+            vehicle.position.set(0, 0, 5); // Iniciar en el centro del patio
+            scene.add(vehicle);
+
+
+            // Materiales del vehículo
+            const chassisMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.5 }); // Amarillo seguridad
+            const darkMetal = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 }); // Gris oscuro para motor/mastil
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 }); // Hule negro
+            const seatMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
+
+
+            // 1. Chasis principal
+            const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 2.2), chassisMat);
+            chassis.position.y = 0.55;
+            chassis.castShadow = true;
+            chassis.receiveShadow = true;
+            vehicle.add(chassis);
+
+
+            // Contrapeso trasero (forma curva)
+            const counterWeight = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.6, 0.5), darkMetal);
+            counterWeight.position.set(0, 0.65, -1.25);
+            counterWeight.castShadow = true;
+            vehicle.add(counterWeight);
+
+
+            // 2. Cabina de seguridad (Tubos de soporte)
+            const cabinFrame = new THREE.Group();
+            const poleGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.2);
+            
+            const poleFL = new THREE.Mesh(poleGeo, darkMetal); poleFL.position.set(-0.6, 1.5, 0.5); poleFL.castShadow = true;
+            const poleFR = new THREE.Mesh(poleGeo, darkMetal); poleFR.position.set(0.6, 1.5, 0.5); poleFR.castShadow = true;
+            const poleBL = new THREE.Mesh(poleGeo, darkMetal); poleBL.position.set(-0.6, 1.5, -0.6); poleBL.castShadow = true;
+            const poleBR = new THREE.Mesh(poleGeo, darkMetal); poleBR.position.set(0.6, 1.5, -0.6); poleBR.castShadow = true;
+            
+            const roof = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.05, 1.2), chassisMat);
+            roof.position.set(0, 2.1, -0.05);
+            roof.castShadow = true;
+
+
+            cabinFrame.add(poleFL, poleFR, poleBL, poleBR, roof);
+            vehicle.add(cabinFrame);
+
+
+            // Asiento
+            const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.3, 0.6), seatMat);
+            seat.position.set(0, 1.1, -0.2);
+            vehicle.add(seat);
+
+
+            // Volante
+            const wheelJoint = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.6), darkMetal);
+            wheelJoint.rotation.x = Math.PI / 6;
+            wheelJoint.position.set(0, 1.15, 0.4);
+            vehicle.add(wheelJoint);
+
+
+            const steeringWheel = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 8, 24), darkMetal);
+            steeringWheel.rotation.x = Math.PI / 3;
+            steeringWheel.position.set(0, 1.4, 0.55);
+            vehicle.add(steeringWheel);
+
+
+            // 3. Ruedas (4 llantas)
+            const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.3, 24);
+            wheelGeo.rotateZ(Math.PI / 2); // Alinear cilindro
+
+
+            const wheelFL = new THREE.Mesh(wheelGeo, tireMat); wheelFL.position.set(-0.75, 0.35, 0.75); wheelFL.castShadow = true;
+            const wheelFR = new THREE.Mesh(wheelGeo, tireMat); wheelFR.position.set(0.75, 0.35, 0.75); wheelFR.castShadow = true;
+            const wheelBL = new THREE.Mesh(wheelGeo, tireMat); wheelBL.position.set(-0.75, 0.35, -0.75); wheelBL.castShadow = true;
+            const wheelBR = new THREE.Mesh(wheelGeo, tireMat); wheelBR.position.set(0.75, 0.35, -0.75); wheelBR.castShadow = true;
+            vehicle.add(wheelFL, wheelFR, wheelBL, wheelBR);
+
+
+            // 4. Mástil frontal (Guía para las horquillas)
+            const mast = new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.5, 0.1), darkMetal);
+            mast.position.set(0, 1.4, 1.15);
+            mast.castShadow = true;
+            vehicle.add(mast);
+
+
+            // 5. Horquillas (El elevador móvil)
+            forks = new THREE.Group();
+            forks.position.set(0, car.forkHeight, 1.25); // Alineado al frente del mástil
+
+
+            // Soporte trasero del elevador
+            const backplate = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.4, 0.05), darkMetal);
+            backplate.position.y = 0.2;
+            forks.add(backplate);
+
+
+            // Púas horizontales (Las que cargan los palets)
+            const prongGeo = new THREE.BoxGeometry(0.1, 0.03, 0.95);
+            const prongMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.1 });
+            
+            const prongLeft = new THREE.Mesh(prongGeo, prongMat);
+            prongLeft.position.set(-0.25, 0.015, 0.45);
+            prongLeft.castShadow = true;
+
+
+            const prongRight = new THREE.Mesh(prongGeo, prongMat);
+            prongRight.position.set(0.25, 0.015, 0.45);
+            prongRight.castShadow = true;
+
+
+            forks.add(prongLeft, prongRight);
+            vehicle.add(forks);
+        }
+
+
+        // Crear una tarima de madera (Pallet) con una caja de cartón escolar encima
+        function spawnPallet() {
+            // Eliminar elemento anterior si existe
+            if (palletWithBox) scene.remove(palletWithBox);
+
+
+            palletWithBox = new THREE.Group();
+            // Colocarla en una posición inicial aleatoria en el área de carga (al fondo)
+            palletWithBox.position.set(-3 + Math.random()*2, 0.0, 0 + Math.random()*3);
+            scene.add(palletWithBox);
+
+
+            // Materiales de madera y cartón
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.9 }); // Color madera
+            const boxMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.95 }); // Caja cartón
+
+
+            // Base de la tarima (Pallet de madera)
+            // Tablas de soporte inferiores
+            const plankB1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.1), woodMat); plankB1.position.set(0, 0.025, -0.45); plankB1.castShadow = true;
+            const plankB2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.1), woodMat); plankB2.position.set(0, 0.025, 0);    plankB2.castShadow = true;
+            const plankB3 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.1), woodMat); plankB3.position.set(0, 0.025, 0.45);  plankB3.castShadow = true;
+            palletWithBox.add(plankB1, plankB2, plankB3);
+
+
+            // Vigas transversales (las que crean el hueco para las horquillas)
+            const beamL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 1.0), woodMat); beamL.position.set(-0.45, 0.11, 0); beamL.castShadow = true;
+            const beamC = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 1.0), woodMat); beamC.position.set(0, 0.11, 0);     beamC.castShadow = true;
+            const beamR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 1.0), woodMat); beamR.position.set(0.45, 0.11, 0);  beamR.castShadow = true;
+            palletWithBox.add(beamL, beamC, beamR);
+
+
+            // Tablas superiores de la tarima
+            for (let i = -4; i <= 4; i++) {
+                const topPlank = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.03, 0.08), woodMat);
+                topPlank.position.set(0, 0.185, i * 0.11);
+                topPlank.castShadow = true;
+                palletWithBox.add(topPlank);
+            }
+
+
+            // Caja grande sobre el palet (Libros para la Bodega del Asís)
+            const mainBox = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.8, 0.9), boxMat);
+            mainBox.position.y = 0.6; // Sobre la tarima
+            mainBox.castShadow = true;
+            palletWithBox.add(mainBox);
+
+
+            // Cinta de empaque decorativa en la caja
+            const tapeGeo = new THREE.BoxGeometry(0.15, 0.81, 0.91);
+            const tapeMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
+            const tape = new THREE.Mesh(tapeGeo, tapeMat);
+            tape.position.y = 0.6;
+            palletWithBox.add(tape);
+        }
+
+
+        // --- MANEJO DEL TECLADO Y BOTONES TÁCTILES ---
+
+
+        function setupInput() {
+            // Capturar teclado
+            window.addEventListener('keydown', (e) => {
+                if (!gameRunning) return;
+                switch (e.key.toLowerCase()) {
+                    case 'arrowup':
+                    case 'w': keys.forward = true; break;
+                    case 'arrowdown':
+                    case 's': keys.backward = true; break;
+                    case 'arrowleft':
+                    case 'a': keys.left = true; break;
+                    case 'arrowright':
+                    case 'd': keys.right = true; break;
+                    case 'q': keys.forkUp = true; break;
+                    case 'e': keys.forkDown = true; break;
+                }
+            });
+
+
+            window.addEventListener('keyup', (e) => {
+                switch (e.key.toLowerCase()) {
+                    case 'arrowup':
+                    case 'w': keys.forward = false; break;
+                    case 'arrowdown':
+                    case 's': keys.backward = false; break;
+                    case 'arrowleft':
+                    case 'a': keys.left = false; break;
+                    case 'arrowright':
+                    case 'd': keys.right = false; break;
+                    case 'q': keys.forkUp = false; break;
+                    case 'e': keys.forkDown = false; break;
+                }
+            });
+
+
+            // Capturar botones en pantalla (Horquillas)
+            const bUp = document.getElementById('btn-fork-up');
+            const bDown = document.getElementById('btn-fork-down');
+
+
+            bUp.addEventListener('mousedown', () => keys.forkUp = true);
+            bUp.addEventListener('mouseup', () => keys.forkUp = false);
+            bUp.addEventListener('touchstart', (e) => { e.preventDefault(); keys.forkUp = true; });
+            bUp.addEventListener('touchend', () => keys.forkUp = false);
+
+
+            bDown.addEventListener('mousedown', () => keys.forkDown = true);
+            bDown.addEventListener('mouseup', () => keys.forkDown = false);
+            bDown.addEventListener('touchstart', (e) => { e.preventDefault(); keys.forkDown = true; });
+            bDown.addEventListener('touchend', () => keys.forkDown = false);
+
+
+            // Capturar botones de dirección en pantalla (Celulares/Tabletas)
+            setupTouchBtn('ctrl-forward', 'forward');
+            setupTouchBtn('ctrl-backward', 'backward');
+            setupTouchBtn('ctrl-left', 'left');
+            setupTouchBtn('ctrl-right', 'right');
+        }
+
+
+        function setupTouchBtn(elementId, actionKey) {
+            const btn = document.getElementById(elementId);
+            btn.addEventListener('mousedown', () => keys[actionKey] = true);
+            btn.addEventListener('mouseup', () => keys[actionKey] = false);
+            btn.addEventListener('mouseleave', () => keys[actionKey] = false);
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys[actionKey] = true;
+            });
+            btn.addEventListener('touchend', () => keys[actionKey] = false);
+        }
+
+
+        // --- SISTEMA DE CÁMARA DINÁMICA DE ARRASTRE ---
+
+
+        function setupCameraControls() {
+            const container = document.getElementById('canvas-container');
+
+
+            container.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                prevMouseX = e.clientX;
+                prevMouseY = e.clientY;
+            });
+
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isMouseDown) return;
+                const deltaX = e.clientX - prevMouseX;
+                const deltaY = e.clientY - prevMouseY;
+
+
+                cameraAngleX -= deltaX * 0.005; // Velocidad de rotación horizontal
+                cameraAngleY = Math.max(0.1, Math.min(Math.PI/2 - 0.1, cameraAngleY + deltaY * 0.005)); // Límite vertical
+
+
+                prevMouseX = e.clientX;
+                prevMouseY = e.clientY;
+            });
+
+
+            window.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+
+
+            // Adaptar para pantallas táctiles (deslizar con un dedo en pantalla para rotar la vista 3D)
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isMouseDown = true;
+                    prevMouseX = e.touches[0].clientX;
+                    prevMouseY = e.touches[0].clientY;
+                }
+            });
+
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isMouseDown || e.touches.length !== 1) return;
+                const deltaX = e.touches[0].clientX - prevMouseX;
+                const deltaY = e.touches[0].clientY - prevMouseY;
+
+
+                cameraAngleX -= deltaX * 0.007;
+                cameraAngleY = Math.max(0.1, Math.min(Math.PI/2 - 0.1, cameraAngleY + deltaY * 0.007));
+
+
+                prevMouseX = e.touches[0].clientX;
+                prevMouseY = e.touches[0].clientY;
+            });
+
+
+            container.addEventListener('touchend', () => {
+                isMouseDown = false;
+            });
+        }
+
+
+        // --- LÓGICA DE ACTUALIZACIÓN DE FÍSICAS DE JUEGO ---
+
+
+        function updatePhysics() {
+            if (!gameRunning) return;
+
+
+            // 1. Manejo de velocidad y aceleración del vehículo
+            if (keys.forward) {
+                car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+            } else if (keys.backward) {
+                car.speed = Math.max(car.speed - car.acceleration, -car.maxSpeed / 2); // Reversa más lenta
+            } else {
+                car.speed *= car.deceleration; // Desaceleración por fricción
+            }
+
+
+            // 2. Rotación al avanzar o retroceder (Dirección de llantas)
+            if (Math.abs(car.speed) > 0.01) {
+                // Invertir sentido de giro al ir en reversa
+                const rotDirection = car.speed > 0 ? 1 : -1;
+                if (keys.left) car.angle += car.rotationSpeed * rotDirection;
+                if (keys.right) car.angle -= car.rotationSpeed * rotDirection;
+            }
+
+
+            // 3. Aplicar posición final
+            vehicle.position.x += Math.sin(car.angle) * car.speed;
+            vehicle.position.z += Math.cos(car.angle) * car.speed;
+            vehicle.rotation.y = car.angle;
+
+
+            // Bloquear límites del mapa de la bodega (paredes invisibles)
+            vehicle.position.x = Math.max(-19, Math.min(19, vehicle.position.x));
+            vehicle.position.z = Math.max(-19, Math.min(19, vehicle.position.z));
+
+
+            // 4. Mover horquillas verticalmente
+            if (keys.forkUp) {
+                car.forkHeight = Math.min(car.forkHeight + 0.02, car.maxForkHeight);
+            }
+            if (keys.forkDown) {
+                car.forkHeight = Math.max(car.forkHeight - 0.02, car.minForkHeight);
+            }
+            forks.position.y = car.forkHeight;
+
+
+            // 5. Verificar física de levantamiento del Pallet
+            checkPalletInteraction();
+        }
+
+
+        // Comprobar si las horquillas se metieron debajo de la tarima
+        function checkPalletInteraction() {
+            if (carryingBox) {
+                // Si ya lo carga, el pallet se pega a la posición de las horquillas
+                // Obtener posición absoluta de las horquillas en la escena mundial
+                const forkWorldPosition = new THREE.Vector3();
+                forks.getWorldPosition(forkWorldPosition);
+
+
+                // El pallet se desliza sobre las horquillas
+                palletWithBox.position.copy(forkWorldPosition);
+                // Las puntas de las horquillas tienen un desplazamiento hacia el frente
+                const directionVec = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), car.angle);
+                palletWithBox.position.addScaledVector(directionVec, 0.4);
+                palletWithBox.rotation.y = car.angle;
+
+
+                // Comprobar si se entregó la caja en el estante de la bodega que brilla
+                checkDelivery();
+            } else {
+                // Verificar si las horquillas están en posición de encajar (colisión 3D básica)
+                const forkPos = new THREE.Vector3();
+                forks.getWorldPosition(forkPos);
+
+
+                const palletPos = palletWithBox.position;
+
+
+                // Medir distancia entre horquillas y la tarima de madera
+                const distance = forkPos.distanceTo(palletPos);
+
+
+                // El ángulo del vehículo debe estar alineado con el pallet para poder ensartar
+                const angleDiff = Math.abs((car.angle % (Math.PI * 2)) - (palletWithBox.rotation.y % (Math.PI * 2)));
+
+
+                // Si está muy cerca, a la altura correcta y alineado
+                if (distance < 1.3 && Math.abs(forkPos.y - (palletPos.y + 0.12)) < 0.2) {
+                    carryingBox = true;
+                    showToast("¡Caja Cargada con Éxito! Llévala al estante brillante.");
+                }
+            }
+        }
+
+
+        // Comprobar si se depositó exitosamente en la estantería
+        function checkDelivery() {
+            const palletPos = palletWithBox.position;
+            const destPos = deliveryZone.position;
+
+
+            // Medir distancia entre el pallet y la repisa brillante azul
+            const dist = palletPos.distanceTo(destPos);
+
+
+            // Si está encima de la repisa brillante de la bodega
+            if (dist < 1.5) {
+                carryingBox = false;
+                
+                // Dejar la caja fija en la repisa para siempre
+                palletWithBox.position.copy(destPos);
+                palletWithBox.position.y = 2.2; // Altura exacta de la repisa
+                palletWithBox.rotation.y = 0;
+
+
+                // Festejar
+                score++;
+                document.getElementById('score').textContent = `${score} / 3`;
+                showToast("¡Excelente entrega! Cargando la siguiente tarima...");
+
+
+                if (score >= 3) {
+                    triggerWin();
+                } else {
+                    // Esperar un momento y spawnear otra caja para llevar
+                    setTimeout(() => {
+                        spawnPallet();
+                    }, 2000);
+                }
+            }
+        }
+
+
+        // --- SISTEMA DE CÁMARA SEGUIDORA INTELIGENTE ---
+
+
+        function updateCamera() {
+            if (!vehicle) return;
+
+
+            // Calcular posición ideal de la cámara según los ángulos de arrastre del usuario
+            const targetX = vehicle.position.x - Math.sin(car.angle + cameraAngleX) * cameraRadius * Math.cos(cameraAngleY);
+            const targetZ = vehicle.position.z - Math.cos(car.angle + cameraAngleX) * cameraRadius * Math.cos(cameraAngleY);
+            const targetY = vehicle.position.y + Math.sin(cameraAngleY) * cameraRadius + 1;
+
+
+            // Interpolación suave para evitar saltos bruscos de la cámara 3D
+            camera.position.x += (targetX - camera.position.x) * 0.08;
+            camera.position.y += (targetY - camera.position.y) * 0.08;
+            camera.position.z += (targetZ - camera.position.z) * 0.08;
+
+
+            // La cámara siempre debe enfocar al montacargas
+            const lookTarget = vehicle.position.clone().add(new THREE.Vector3(0, 1, 0));
+            camera.lookAt(lookTarget);
+        }
+
+
+        // --- MANEJO DE ESTADOS DE INTERFAZ DE USUARIO ---
+
+
+        function showToast(text) {
+            const toast = document.getElementById('status-toast');
+            toast.textContent = text;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
+        }
+
+
+        function updateTimer() {
+            if (!gameRunning) return;
+            timeLeft--;
+            
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+
+            if (timeLeft <= 0) {
+                triggerGameOver();
+            }
+        }
+
+
+        function triggerWin() {
+            gameRunning = false;
+            clearInterval(timerInterval);
+            
+            const oIcon = document.getElementById('overlay-icon');
+            oIcon.setAttribute('data-lucide', 'trophy');
+            oIcon.className = "w-12 h-12 text-yellow-400";
+            lucide.createIcons();
+
+
+            document.getElementById('overlay-title').textContent = "¡Campeón de la Bodega!";
+            document.getElementById('overlay-desc').innerHTML = `Acomodaste todo el cargamento escolar del Instituto Asís en tiempo récord.<br><span class="text-emerald-400 font-bold text-lg">Puntuación: Perfecta • 3 / 3</span>`;
+            document.getElementById('btn-start').textContent = "Volver a Jugar";
+            document.getElementById('game-overlay').classList.remove('hidden');
+        }
+
+
+        function triggerGameOver() {
+            gameRunning = false;
+            clearInterval(timerInterval);
+
+
+            const oIcon = document.getElementById('overlay-icon');
+            oIcon.setAttribute('data-lucide', 'clock');
+            oIcon.className = "w-12 h-12 text-rose-500";
+            lucide.createIcons();
+
+
+            document.getElementById('overlay-title').textContent = "Se Agotó el Tiempo";
+            document.getElementById('overlay-desc').textContent = "No lograste acomodar todas las cajas en las estanterías de la escuela. ¡Inténtalo de nuevo!";
+            document.getElementById('btn-start').textContent = "Reintentar Desafío";
+            document.getElementById('game-overlay').classList.remove('hidden');
+        }
+
+
+        function startNewGame() {
+            score = 0;
+            timeLeft = 120;
+            carryingBox = false;
+            document.getElementById('score').textContent = "0 / 3";
+            document.getElementById('timer').textContent = "02:00";
+            
+            // Reiniciar montacargas
+            vehicle.position.set(0, 0, 5);
+            car.angle = 0;
+            car.speed = 0;
+            car.forkHeight = 0.2;
+            forks.position.y = 0.2;
+
+
+            spawnPallet();
+
+
+            document.getElementById('game-overlay').classList.add('hidden');
+            gameRunning = true;
+
+
+            // Iniciar reloj
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+
+        // --- BUCLE DE ANIMACIÓN DE THREE.JS ---
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+
+            // Actualizar físicas y controles
+            updatePhysics();
+
+
+            // Seguimiento suave de la cámara
+            updateCamera();
+
+
+            // Animación del brillo de entrega (pulsación suave)
+            if (deliveryZone && gameRunning) {
+                const time = Date.now() * 0.003;
+                deliveryZone.material.opacity = 0.3 + Math.sin(time) * 0.15;
+            }
+
+
+            renderer.render(scene, camera);
+        }
+
+
+        // Esperar a que el DOM esté listo antes de arrancar todo
+        window.onload = function() {
+            init();
+            animate();
+            
+            // Asignar evento al botón de inicio
+            document.getElementById('btn-start').addEventListener('click', startNewGame);
+        };
+    </script>
+</body>
+</html>
