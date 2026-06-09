@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>School Dash: Camino a la Escuela - Instituto Asís de Occidente</title>
     <style>
         body {
@@ -18,6 +18,7 @@
             overflow: hidden;
             touch-action: none;
             user-select: none;
+            -webkit-user-select: none;
         }
 
         #game-container {
@@ -26,14 +27,20 @@
             border: 4px solid #fff;
             border-radius: 16px;
             background: #a8dadc;
-            width: 800px;
-            height: 450px;
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            box-sizing: border-box;
         }
 
         canvas {
             display: block;
             cursor: pointer;
             border-radius: 12px;
+            width: 100%;
+            height: 100%;
         }
 
         /* Pantalla de Menú de Navegación con Efecto de Cristal Translúcido */
@@ -45,24 +52,25 @@
             height: 100%;
             background: rgba(255, 255, 255, 0.15); /* Permite ver el speedrun de fondo */
             backdrop-filter: blur(3px); /* Difumina ligeramente la carrera de fondo */
+            -webkit-backdrop-filter: blur(3px);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             z-index: 20;
             box-sizing: border-box;
-            padding: 20px;
+            padding: 2vw;
             border-radius: 12px;
         }
 
         #menu-header {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 1vh;
             width: 100%;
         }
 
         #menu-title {
-            font-size: 30px;
+            font-size: clamp(20px, 4vw, 30px);
             font-weight: 900;
             color: #fff;
             text-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
@@ -71,7 +79,7 @@
         }
 
         #menu-author {
-            font-size: 16px;
+            font-size: clamp(12px, 2vw, 16px);
             font-weight: 700;
             color: #ffeaa7;
             text-shadow: 1px 1px 5px rgba(0,0,0,0.4);
@@ -80,7 +88,7 @@
         }
 
         #menu-grade {
-            font-size: 14px;
+            font-size: clamp(10px, 1.8vw, 14px);
             font-weight: bold;
             color: #fff;
             text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
@@ -94,7 +102,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin-top: 15px;
+            margin-top: 2vh;
             width: 100%;
         }
 
@@ -102,17 +110,19 @@
             background: #fff;
             border: 3px solid #2d3436;
             color: #2d3436;
-            padding: 12px 30px;
-            font-size: 18px;
+            padding: 1.5vh 30px;
+            font-size: clamp(14px, 2.2vw, 18px);
             font-weight: bold;
             border-radius: 25px;
-            margin: 8px;
+            margin: 6px;
             cursor: pointer;
             box-shadow: 0 5px 0 #2d3436;
             transition: all 0.1s ease;
-            width: 260px;
+            width: 80%;
+            max-width: 280px;
             text-align: center;
             box-sizing: border-box;
+            touch-action: manipulation;
         }
 
         .menu-choice-btn:hover {
@@ -135,9 +145,10 @@
             border-radius: 15px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 13px;
+            font-size: clamp(11px, 1.8vw, 13px);
             transition: all 0.2s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            touch-action: manipulation;
         }
 
         .menu-back-choice-btn:hover {
@@ -154,7 +165,7 @@
         }
 
         .section-header-tag {
-            font-size: 18px;
+            font-size: clamp(14px, 2.5vw, 18px);
             font-weight: 800;
             color: white;
             text-transform: uppercase;
@@ -165,15 +176,17 @@
         /* Contenedores con Scroll para cada subsección */
         .menu-scroll-subcontainer {
             width: 100%;
-            height: 250px;
+            height: 48vh;
+            max-height: 230px;
             overflow-y: auto;
             padding-right: 6px;
             box-sizing: border-box;
             margin-top: 10px;
+            -webkit-overflow-scrolling: touch; /* Desplazamiento inercial suave en iOS */
         }
 
         .menu-scroll-subcontainer::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         .menu-scroll-subcontainer::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.6);
@@ -184,16 +197,17 @@
         }
 
         .world-row {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             background: rgba(255, 255, 255, 0.2);
-            padding: 10px;
+            padding: 8px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
         .world-title {
-            font-size: 14px;
+            font-size: clamp(11px, 2vw, 14px);
             color: #ffeaa7;
             margin-bottom: 6px;
             font-weight: bold;
@@ -203,20 +217,21 @@
         .sublevel-buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            gap: 6px;
         }
 
         .level-btn {
             background: rgba(255,255,255,0.9);
             border: none;
             color: #2d3436;
-            padding: 8px;
+            padding: 8px 4px;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 13px;
+            font-size: clamp(10px, 1.8vw, 13px);
             box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            touch-action: manipulation;
         }
 
         .level-btn:hover {
@@ -229,15 +244,21 @@
         .shop-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 10px;
             padding-bottom: 10px;
+        }
+
+        @media (max-width: 580px) {
+            .shop-grid {
+                grid-template-columns: repeat(2, 1fr); /* Reducción a 2 columnas en pantallas estrechas */
+            }
         }
 
         .skin-card {
             background: rgba(255, 255, 255, 0.9);
             border: 3px solid transparent;
             border-radius: 12px;
-            padding: 12px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -255,21 +276,21 @@
         }
 
         .skin-preview {
-            width: 36px;
-            height: 36px;
-            margin-bottom: 8px;
+            width: 32px;
+            height: 32px;
+            margin-bottom: 6px;
             position: relative;
             box-shadow: 0 3px 5px rgba(0,0,0,0.1);
         }
 
         .skin-name {
-            font-size: 13px;
+            font-size: clamp(11px, 1.8vw, 13px);
             font-weight: bold;
             margin-bottom: 4px;
         }
 
         .skin-price {
-            font-size: 11px;
+            font-size: clamp(10px, 1.6vw, 11px);
             color: #d35400;
             margin-bottom: 8px;
             font-weight: bold;
@@ -279,14 +300,15 @@
             background: #74b9ff;
             border: none;
             color: white;
-            padding: 6px 12px;
+            padding: 6px 10px;
             border-radius: 15px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 11px;
+            font-size: clamp(10px, 1.6vw, 11px);
             width: 90%;
             transition: all 0.2s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            touch-action: manipulation;
         }
 
         .shop-btn:hover:not(:disabled) {
@@ -306,19 +328,19 @@
 
         /* Carteras y Marcadores */
         #wallet-container-main {
-            font-size: 18px;
+            font-size: clamp(12px, 2.5vw, 18px);
             color: #fff;
             font-weight: bold;
             background: rgba(0,0,0,0.3);
             padding: 6px 20px;
             border-radius: 20px;
-            margin-top: 15px;
+            margin-top: 1.5vh;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
             text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
         }
 
         #wallet-container-shop {
-            font-size: 15px;
+            font-size: clamp(11px, 2vw, 15px);
             color: #fff;
             font-weight: bold;
             background: rgba(0,0,0,0.25);
@@ -328,13 +350,13 @@
 
         #ui-overlay {
             position: absolute;
-            top: 15px;
-            left: 20px;
-            right: 20px;
+            top: 10px;
+            left: 10px;
+            right: 10px;
             pointer-events: none;
             display: flex;
             justify-content: space-between;
-            font-size: 18px;
+            font-size: clamp(11px, 2vw, 18px);
             font-weight: bold;
             text-shadow: 1px 1px 3px rgba(255,255,255,0.8);
             z-index: 5;
@@ -343,7 +365,7 @@
 
         .status-item {
             background: rgba(255, 255, 255, 0.85);
-            padding: 8px 15px;
+            padding: 6px 12px;
             border-radius: 15px;
             border: 2px solid #fff;
             pointer-events: auto;
@@ -353,14 +375,16 @@
         #menu-back-btn {
             cursor: pointer;
             color: #2d3436;
-            font-size: 14px;
-            padding: 5px 12px;
+            font-size: clamp(10px, 1.8vw, 14px);
+            padding: 4px 10px;
             border-radius: 15px;
             background: rgba(255,255,255,0.85);
             border: 2px solid #fff;
             transition: all 0.2s;
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            pointer-events: auto;
+            touch-action: manipulation;
         }
 
         #menu-back-btn:hover {
@@ -374,10 +398,11 @@
         /* Barra de progreso */
         #progress-container {
             position: absolute;
-            top: 20px;
+            top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            width: 250px;
+            width: 30%;
+            max-width: 250px;
             text-align: center;
             z-index: 5;
             pointer-events: none;
@@ -385,7 +410,7 @@
 
         #progress-bar-bg {
             width: 100%;
-            height: 10px;
+            height: 8px;
             background: rgba(255, 255, 255, 0.4);
             border-radius: 5px;
             overflow: hidden;
@@ -400,26 +425,27 @@
         }
 
         #progress-text {
-            font-size: 14px;
+            font-size: clamp(10px, 1.8vw, 14px);
             font-weight: bold;
-            margin-top: 4px;
+            margin-top: 2px;
             color: #2d3436;
             text-shadow: 1px 1px 2px #fff;
         }
 
         #boss-ui {
             position: absolute;
-            bottom: 60px;
+            bottom: 50px;
             left: 50%;
             transform: translateX(-50%);
-            width: 300px;
+            width: 40%;
+            max-width: 300px;
             display: none;
             text-align: center;
         }
 
         #boss-bar-bg {
             width: 100%;
-            height: 12px;
+            height: 10px;
             background: rgba(255, 255, 255, 0.5);
             border-radius: 6px;
             overflow: hidden;
@@ -439,12 +465,13 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(255, 255, 255, 0.98);
-            padding: 40px;
+            padding: 4vw;
             border-radius: 20px;
             text-align: center;
             display: none;
             border: 3px solid #74b9ff;
-            min-width: 320px;
+            width: 70%;
+            max-width: 320px;
             z-index: 25;
             color: #2d3436;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -453,16 +480,17 @@
         .btn {
             background: #74b9ff;
             border: none;
-            padding: 12px 30px;
+            padding: 10px 24px;
             color: white;
             border-radius: 20px;
             cursor: pointer;
-            margin-top: 20px;
+            margin-top: 15px;
             font-weight: bold;
-            font-size: 18px;
+            font-size: clamp(13px, 2.2vw, 18px);
             transition: all 0.2s;
             text-transform: uppercase;
             box-shadow: 0 4px 10px rgba(116, 185, 255, 0.4);
+            touch-action: manipulation;
         }
 
         .btn:hover {
@@ -472,12 +500,12 @@
 
         #controls-hint {
             position: absolute;
-            bottom: 10px;
+            bottom: 6px;
             width: 100%;
             text-align: center;
             color: #777;
-            font-size: 11px;
-            letter-spacing: 1px;
+            font-size: clamp(9px, 1.5vw, 11px);
+            letter-spacing: 0.5px;
             pointer-events: none;
         }
     </style>
@@ -485,6 +513,7 @@
 <body>
 
     <div id="game-container">
+        <!-- Menú unificado con selectores e interactividad completa -->
         <div id="menu-screen">
             <div id="menu-header">
                 <h1 id="menu-title">SCHOOL DASH: CAMINO A LA ESCUELA</h1>
@@ -492,6 +521,7 @@
                 <p id="menu-grade">de 6° de Primaria</p>
             </div>
 
+            <!-- OPCIONES PRINCIPALES DEL MENÚ -->
             <div id="main-menu-options">
                 <button class="menu-choice-btn" onclick="openMenuSection('levels')">Lecciones</button>
                 <button class="menu-choice-btn" onclick="openMenuSection('shop')">Tienda Escolar</button>
@@ -499,6 +529,7 @@
                 <div id="wallet-container-main">Útiles Guardados: <span id="wallet-amount-main">0</span> 🎒</div>
             </div>
 
+            <!-- SUBSECCIÓN: LECCIONES -->
             <div id="lecciones-container" class="menu-sub-view" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <button class="menu-back-choice-btn" onclick="backToMainMenuOptions()">⬅ Volver</button>
@@ -511,6 +542,7 @@
                 </div>
             </div>
 
+            <!-- SUBSECCIÓN: TIENDA ESCOLAR -->
             <div id="tienda-container" class="menu-sub-view" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <button class="menu-back-choice-btn" onclick="backToMainMenuOptions()">⬅ Volver</button>
@@ -523,7 +555,7 @@
                 </div>
             </div>
 
-            <div style="color: #fff; font-size: 10px; margin-top: 15px; text-align: center; opacity: 0.9; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+            <div style="color: #fff; font-size: 9px; margin-top: 10px; text-align: center; opacity: 0.9; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
                 Llega seguro al Instituto Asís de Occidente esquivando obstáculos | ESC: Regresar
             </div>
         </div>
@@ -573,7 +605,7 @@
     const walletAmountMain = document.getElementById('wallet-amount-main');
     const walletAmountShop = document.getElementById('wallet-amount-shop');
 
-    // Configuración Física
+    // Configuración Física (Físicas de Geometry Dash)
     const GRAVITY = 1.05;         
     const JUMP_FORCE = -14.5;      
     const AUTO_SPEED = 9.5;        
@@ -583,7 +615,7 @@
 
     // Estado del Juego
     let gameState = 'menu';
-    let score = 0; 
+    let score = 0; // Útiles guardados
     let lives = 3;
     let world = 1;
     let subLevel = 1;
@@ -596,7 +628,7 @@
     let particles = [];
     let floatingTexts = [];
 
-    // Base de Datos de Skins
+    // Base de Datos de Skins (¡Ampliada con Alumnos, Profesores de Especialidad, Maestra y Maestro!)
     let activeSkinId = 'cyan';
     const skinsDatabase = {
         cyan: { id: 'cyan', name: 'Celeste Clásico', color: '#00d8d6', cost: 0, unlocked: true, style: 'classic' },
@@ -1709,7 +1741,8 @@
                 ctx.fillStyle = '#74b9ff'; ctx.fillRect(bx + 30, by + 30, 35, 35); ctx.strokeRect(bx + 30, by + 30, 35, 35);
                 ctx.fillRect(bx + bw - 65, by + 30, 35, 35); ctx.strokeRect(bx + bw - 65, by + 30, 35, 35);
                 ctx.beginPath(); ctx.moveTo(bx + 47, by + 30); ctx.lineTo(bx + 47, by + 65); ctx.moveTo(bx + 30, by + 47); ctx.lineTo(bx + 65, by + 47);
-                ctx.moveTo(bx + bw - 47, by + 30); ctx.lineTo(bx + bw - 47, by + 65); ctx.moveTo(bx + bw - 65, by + 47); ctx.lineTo(bx + bw - 30, by + 47); ctx.stroke();
+                ctx.moveTo(bx + bw - 47, by + 30); ctx.lineTo(bx + bw - 47, by + 65);
+                ctx.moveTo(bx + bw - 65, by + 47); ctx.lineTo(bx + bw - 30, by + 47); ctx.stroke();
                 ctx.fillStyle = '#2d3436'; ctx.font = "bold 13px 'Segoe UI'"; ctx.textAlign = 'center'; ctx.fillText("Instituto Asis", bx + bw/2, by + 105);
                 drawAsisShield(ctx, bx + bw/2, by + 45, 32);
                 ctx.fillStyle = en.locked ? '#d63031' : '#2ecc71'; ctx.fillRect(en.x, en.y, en.w, en.h); ctx.strokeRect(en.x, en.y, en.w, en.h);
@@ -1779,7 +1812,10 @@
             } else if (currentStyle === 'headband') {
                 ctx.fillStyle = "#ffffff"; ctx.fillRect(-player.width/2, -12, player.width, 5); ctx.fillStyle = "#e74c3c"; ctx.fillRect(-5, -12, 10, 5);
             } else if (currentStyle === 'matrix') {
-                ctx.fillStyle = "#2ecc71"; ctx.fillRect(-12, -8, 24, 3); ctx.fillStyle = "#27ae60"; ctx.fillRect(-10, -8, 6, 3); ctx.fillRect(4, -8, 6, 3);
+                ctx.fillStyle = "#2ecc71";
+                ctx.fillRect(-12, -8, 24, 3);
+                ctx.fillStyle = "#27ae60";
+                ctx.fillRect(-10, -8, 6, 3); ctx.fillRect(4, -8, 6, 3);
             } else if (currentStyle === 'director') {
                 ctx.fillStyle = "#ffffff"; ctx.fillRect(-5, 6, 10, 9);
                 ctx.fillStyle = "#2d3436"; ctx.beginPath(); ctx.moveTo(-6, 8); ctx.lineTo(-1, 10); ctx.lineTo(-6, 12); ctx.closePath(); ctx.fill();
@@ -1794,8 +1830,10 @@
                 ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.strokeRect(-4, 4, 8, 6);
             } else if (currentStyle === 'uk_flag') {
                 ctx.fillStyle = "#2980b9"; ctx.fillRect(-6, -6, 12, 8);
-                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(6, -2); ctx.moveTo(0, -6); ctx.lineTo(0, 2); ctx.stroke();
-                ctx.strokeStyle = "#e74c3c"; ctx.stroke();
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(6, -2); ctx.moveTo(0, -6); ctx.lineTo(0, 2);
+                ctx.stroke();
+                ctx.strokeStyle = "#e74c3c";
+                ctx.stroke();
             } else if (currentStyle === 'ballet') {
                 ctx.fillStyle = "#ff7979"; ctx.beginPath(); ctx.moveTo(-10, -18); ctx.lineTo(-3, -15); ctx.lineTo(-10, -12); ctx.fill();
                 ctx.beginPath(); ctx.moveTo(10, -18); ctx.lineTo(3, -15); ctx.lineTo(10, -12); ctx.fill();
