@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Dash: Camino a la Escuela - Instituto Asís de Occidente</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #74b9ff;
+            color: #2d3436;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+            border: 4px solid #fff;
+            border-radius: 16px;
+            background: #a8dadc;
+            width: 800px;
+            height: 450px;
+        }
+
+        canvas {
+            display: block;
+            cursor: pointer;
+            border-radius: 12px;
+        }
+
+        /* Pantalla de Menú de Navegación con Efecto de Cristal Translúcido */
+        #menu-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.15); /* Permite ver el speedrun de fondo */
+            backdrop-filter: blur(3px); /* Difumina ligeramente la carrera de fondo */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 20;
+            box-sizing: border-box;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        #menu-header {
+            text-align: center;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+
+        #menu-title {
+            font-size: 30px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        #menu-author {
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffeaa7;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.4);
+            margin: 4px 0 0 0;
+            letter-spacing: 1px;
+        }
+
+        #menu-grade {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+            margin: 2px 0 0 0;
+            letter-spacing: 1px;
+        }
+
+        /* Contenedor de Botones de Opciones Principales */
+        #main-menu-options {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .menu-choice-btn {
+            background: #fff;
+            border: 3px solid #2d3436;
+            color: #2d3436;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 25px;
+            margin: 8px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #2d3436;
+            transition: all 0.1s ease;
+            width: 260px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .menu-choice-btn:hover {
+            background: #ffeaa7;
+            transform: translateY(2px);
+            box-shadow: 0 3px 0 #2d3436;
+        }
+
+        .menu-choice-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0px 0px 0 #2d3436;
+        }
+
+        /* Botón para regresar al selector principal de opciones */
+        .menu-back-choice-btn {
+            background: rgba(255,255,255,0.9);
+            border: 2px solid #2d3436;
+            color: #2d3436;
+            padding: 6px 15px;
+            border-radius: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .menu-back-choice-btn:hover {
+            background: #ff7675;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Secciones Dinámicas */
+        .menu-sub-view {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-header-tag {
+            font-size: 18px;
+            font-weight: 800;
+            color: white;
+            text-transform: uppercase;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.4);
+            margin: 0;
+        }
+
+        /* Contenedores con Scroll para cada subsección */
+        .menu-scroll-subcontainer {
+            width: 100%;
+            height: 250px;
+            overflow-y: auto;
+            padding-right: 6px;
+            box-sizing: border-box;
+            margin-top: 10px;
+        }
+
+        .menu-scroll-subcontainer::-webkit-scrollbar {
+            width: 8px;
+        }
+        .menu-scroll-subcontainer::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 4px;
+        }
+        .menu-scroll-subcontainer::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .world-row {
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .world-title {
+            font-size: 14px;
+            color: #ffeaa7;
+            margin-bottom: 6px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .sublevel-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .level-btn {
+            background: rgba(255,255,255,0.9);
+            border: none;
+            color: #2d3436;
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+        }
+
+        .level-btn:hover {
+            background: #ffeaa7;
+            transform: scale(1.04);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Estilos de la Tienda de Skins */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-bottom: 10px;
+        }
+
+        .skin-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid transparent;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            transition: all 0.2s;
+            color: #2d3436;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .skin-card.equipped {
+            border-color: #fff;
+            background: #eccc68;
+            color: #2d3436;
+        }
+
+        .skin-preview {
+            width: 36px;
+            height: 36px;
+            margin-bottom: 8px;
+            position: relative;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+        }
+
+        .skin-name {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .skin-price {
+            font-size: 11px;
+            color: #d35400;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .shop-btn {
+            background: #74b9ff;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 11px;
+            width: 90%;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .shop-btn:hover:not(:disabled) {
+            background: #0984e3;
+            transform: scale(1.04);
+        }
+
+        .shop-btn.owned {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .shop-btn.active-skin {
+            background: #2d3436;
+            color: white;
+        }
+
+        /* Carteras y Marcadores */
+        #wallet-container-main {
+            font-size: 18px;
+            color: #fff;
+            font-weight: bold;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 20px;
+            border-radius: 20px;
+            margin-top: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        #wallet-container-shop {
+            font-size: 15px;
+            color: #fff;
+            font-weight: bold;
+            background: rgba(0,0,0,0.25);
+            padding: 4px 12px;
+            border-radius: 15px;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            right: 20px;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(255,255,255,0.8);
+            z-index: 5;
+            color: #2d3436;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 8px 15px;
+            border-radius: 15px;
+            border: 2px solid #fff;
+            pointer-events: auto;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        #menu-back-btn {
+            cursor: pointer;
+            color: #2d3436;
+            font-size: 14px;
+            padding: 5px 12px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.85);
+            border: 2px solid #fff;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        #menu-back-btn:hover {
+            background: #ffeaa7;
+            transform: scale(1.05);
+        }
+
+        #lives-display { color: #ff4757; }
+        #level-display { color: #0984e3; }
+
+        /* Barra de progreso */
+        #progress-container {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            text-align: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        #progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        #progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: #20bf6b;
+        }
+
+        #progress-text {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 4px;
+            color: #2d3436;
+            text-shadow: 1px 1px 2px #fff;
+        }
+
+        #boss-ui {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            display: none;
+            text-align: center;
+        }
+
+        #boss-bar-bg {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid #fff;
+        }
+
+        #boss-bar-fill {
+            width: 100%;
+            height: 100%;
+            background: #ff4757;
+            transition: width 0.3s ease;
+        }
+
+        #message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.98);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            border: 3px solid #74b9ff;
+            min-width: 320px;
+            z-index: 25;
+            color: #2d3436;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .btn {
+            background: #74b9ff;
+            border: none;
+            padding: 12px 30px;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 18px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(116, 185, 255, 0.4);
+        }
+
+        .btn:hover {
+            background: #0984e3;
+            transform: scale(1.05);
+        }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            color: #777;
+            font-size: 11px;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="menu-screen">
+            <div id="menu-header">
+                <h1 id="menu-title">SCHOOL DASH: CAMINO A LA ESCUELA</h1>
+                <p id="menu-author">de Damian Gutierrez Pelayo</p>
+                <p id="menu-grade">de 6° de Primaria</p>
+            </div>
+
+            <div id="main-menu-options">
+                <button class="menu-choice-btn" onclick="openMenuSection('levels')">Lecciones</button>
+                <button class="menu-choice-btn" onclick="openMenuSection('shop')">Tienda Escolar</button>
+                
+                <div id="wallet-container-main">Útiles Guardados: <span id="wallet-amount-main">0</span> 🎒</div>
+            </div>
+
+            <div id="lecciones-container" class="menu-sub-view" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <button class="menu-back-choice-btn" onclick="backToMainMenuOptions()">⬅ Volver</button>
+                    <h2 class="section-header-tag">Lecciones</h2>
+                    <div style="width: 80px;"></div>
+                </div>
+                <div id="level-grid-scroll" class="menu-scroll-subcontainer">
+                    <div id="level-grid-container">
+                        </div>
+                </div>
+            </div>
+
+            <div id="tienda-container" class="menu-sub-view" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <button class="menu-back-choice-btn" onclick="backToMainMenuOptions()">⬅ Volver</button>
+                    <h2 class="section-header-tag">Tienda Escolar</h2>
+                    <div id="wallet-container-shop">Útiles: <span id="wallet-amount-shop">0</span> 🎒</div>
+                </div>
+                <div id="shop-grid-scroll" class="menu-scroll-subcontainer">
+                    <div id="shop-grid-container" class="shop-grid">
+                        </div>
+                </div>
+            </div>
+
+            <div style="color: #fff; font-size: 10px; margin-top: 15px; text-align: center; opacity: 0.9; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">
+                Llega seguro al Instituto Asís de Occidente esquivando obstáculos | ESC: Regresar
+            </div>
+        </div>
+
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="ui-overlay">
+            <button id="menu-back-btn" onclick="showMainMenu()">Menú (ESC)</button>
+            <div class="status-item">Nivel: <span id="level-display">1-1</span></div>
+            <div class="status-item" id="lives-display"></div>
+        </div>
+
+        <div id="progress-container">
+            <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
+            <div id="progress-text">0%</div>
+        </div>
+        
+        <div id="boss-ui">
+            <div style="margin-bottom: 5px; font-weight: bold; color: #ff4757; letter-spacing: 1px;">EL DICTADOR DE TAREAS</div>
+            <div id="boss-bar-bg"><div id="boss-bar-fill"></div></div>
+        </div>
+
+        <div id="message-box">
+            <h2 id="msg-title">¡Misión Cumplida!</h2>
+            <p id="msg-body">Has avanzado al siguiente sector.</p>
+            <button id="main-btn" class="btn" onclick="handleButtonClick()">Continuar</button>
+        </div>
+        <div id="controls-hint">PULSA LA PANTALLA, ESPACIO, W o FLECHA ARRIBA PARA SALTAR | ESC: MENÚ</div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const livesElement = document.getElementById('lives-display');
+    const levelElement = document.getElementById('level-display');
+    const messageBox = document.getElementById('message-box');
+    const msgTitle = document.getElementById('msg-title');
+    const msgBody = document.getElementById('msg-body');
+    const mainBtn = document.getElementById('main-btn');
+    const bossUI = document.getElementById('boss-ui');
+    const bossBarFill = document.getElementById('boss-bar-fill');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const progressText = document.getElementById('progress-text');
+    const menuScreen = document.getElementById('menu-screen');
+    const levelGridContainer = document.getElementById('level-grid-container');
+    const shopGridContainer = document.getElementById('shop-grid-container');
+    const walletAmountMain = document.getElementById('wallet-amount-main');
+    const walletAmountShop = document.getElementById('wallet-amount-shop');
+
+    // Configuración Física
+    const GRAVITY = 1.05;         
+    const JUMP_FORCE = -14.5;      
+    const AUTO_SPEED = 9.5;        
+    
+    canvas.width = 800;
+    canvas.height = 450;
+
+    // Estado del Juego
+    let gameState = 'menu';
+    let score = 0; 
+    let lives = 3;
+    let world = 1;
+    let subLevel = 1;
+    let cameraX = 0;
+    let cameraY = 0;
+    let levelLength = 3000;
+    let isCastle = false;
+
+    // Partículas y Textos Flotantes
+    let particles = [];
+    let floatingTexts = [];
+
+    // Base de Datos de Skins
+    let activeSkinId = 'cyan';
+    const skinsDatabase = {
+        cyan: { id: 'cyan', name: 'Celeste Clásico', color: '#00d8d6', cost: 0, unlocked: true, style: 'classic' },
+        student_m: { id: 'student_m', name: 'Alumno con Gorra', color: '#ffbe76', cost: 10, unlocked: false, style: 'cap' },
+        student_f: { id: 'student_f', name: 'Alumna con Coletas', color: '#ff7675', cost: 12, unlocked: false, style: 'pigtails' },
+        pink: { id: 'pink', name: 'Rosa Elegante', color: '#ff69b4', cost: 15, unlocked: false, style: 'bow' },
+        teacher_m: { id: 'teacher_m', name: 'Profesor de Ciencias', color: '#74b9ff', cost: 20, unlocked: false, style: 'tie' },
+        teacher_f: { id: 'teacher_f', name: 'Profesora de Arte', color: '#fd79a8', cost: 25, unlocked: false, style: 'palette' },
+        english_teacher: { id: 'english_teacher', name: 'Maestra de Inglés', color: '#9b59b6', cost: 25, unlocked: false, style: 'uk_flag' },
+        music_teacher: { id: 'music_teacher', name: 'Profesor de Música', color: '#1abc9c', cost: 25, unlocked: false, style: 'music_note' },
+        gold: { id: 'gold', name: 'Estudiante Inteligente', color: '#ffd32a', cost: 30, unlocked: false, style: 'glasses' },
+        pe_teacher: { id: 'pe_teacher', name: 'Profesor de Ed. Física', color: '#e67e22', cost: 30, unlocked: false, style: 'whistle' },
+        dance_teacher: { id: 'dance_teacher', name: 'Maestra de Danza', color: '#fd79a8', cost: 30, unlocked: false, style: 'ballet' },
+        computer_teacher: { id: 'computer_teacher', name: 'Profesor de Cómputo', color: '#34495e', cost: 30, unlocked: false, style: 'computer_screen' },
+        athlete: { id: 'athlete', name: 'Atleta del Instituto', color: '#e17055', cost: 40, unlocked: false, style: 'headband' },
+        general_teacher_f: { id: 'general_teacher_f', name: 'Maestra', color: '#ff7675', cost: 50, unlocked: false, style: 'teacher_f_general' },
+        general_teacher_m: { id: 'general_teacher_m', name: 'Maestro', color: '#2980b9', cost: 50, unlocked: false, style: 'teacher_m_general' },
+        emerald: { id: 'emerald', name: 'Esmeralda Musical', color: '#05c46b', cost: 50, unlocked: false, style: 'headphones' },
+        hacker: { id: 'hacker', name: 'Hacker de la Clase', color: '#2d3436', cost: 60, unlocked: false, style: 'matrix' },
+        purple: { id: 'purple', name: 'Estrella Neón', color: '#a29bfe', cost: 75, unlocked: false, style: 'star' },
+        fire: { id: 'fire', name: 'Fuego Escolar', color: '#ff7675', cost: 100, unlocked: false, style: 'fire' },
+        director: { id: 'director', name: 'Director', color: '#4a5568', cost: 600, unlocked: false, style: 'director' },
+        directora: { id: 'directora', name: 'Directora', color: '#800020', cost: 600, unlocked: false, style: 'directora' }
+    };
+
+    // Tipos de Útiles Escolares
+    const schoolItems = [
+        { type: 'cuaderno', name: 'Cuaderno', color: '#ff7675' },
+        { type: 'lapiz', name: 'Lápiz', color: '#ffeaa7' },
+        { type: 'borrador', name: 'Borrador', color: '#ff9ff3' },
+        { type: 'estuche', name: 'Estuche', color: '#54a0ff' },
+        { type: 'sacapuntas', name: 'Sacapuntas', color: '#a5b1c2' },
+        { type: 'libro', name: 'Libro', color: '#10ac84' },
+        { type: 'pluma', name: 'Pluma', color: '#5f27cd' }
+    ];
+
+    const player = {
+        x: 50,
+        y: 200,
+        width: 30,
+        height: 30,
+        vx: AUTO_SPEED,
+        vy: 0,
+        angle: 0,
+        grounded: false,
+        color: '#00d8d6',
+        dead: false
+    };
+
+    let platforms = [];
+    let entities = [];
+    let boss = null;
+    let victoryFigure = null;
+
+    // --- VARIABLES ESPECIALES PARA EL SPEEDRUN AUTÓNOMO DEL MENÚ ---
+    const menuBot = {
+        x: 100,
+        y: 150,
+        width: 30,
+        height: 30,
+        vx: 8.0, 
+        vy: 0,
+        angle: 0,
+        grounded: false,
+        color: '#ffffff'
+    };
+    let menuPlatforms = [];
+    let menuSpikes = [];
+    let menuItems = [];
+    let menuCameraX = 0;
+    let bgCars = [];
+
+    // Inicializa la pista infinita para la simulación del menú
+    function initMenuSim() {
+        menuPlatforms = [{ x: 0, y: 380, w: 20000, h: 100 }];
+        menuSpikes = [];
+        menuItems = [];
+        bgCars = [];
+        
+        let stepX = 600;
+        for (let i = 0; i < 40; i++) {
+            menuSpikes.push({ x: stepX, y: 380 - 28, w: 24, h: 28 });
+            
+            const randomItem = schoolItems[Math.floor(Math.random() * schoolItems.length)];
+            menuItems.push({
+                type: 'menu_collectible',
+                itemType: randomItem.type,
+                itemName: randomItem.name,
+                itemColor: randomItem.color,
+                x: stepX - 120,
+                y: 260,
+                w: 24,
+                h: 24,
+                collected: false
+            });
+
+            stepX += 350 + Math.random() * 250;
+        }
+
+        // Generar autos del fondo para el menú
+        for (let i = 0; i < 12; i++) {
+            bgCars.push({
+                x: i * 450 + Math.random() * 200,
+                y: 335,
+                color: ['#ff7675', '#f1c40f', '#9b59b6', '#ffbe76', '#1abc9c', '#74b9ff'][Math.floor(Math.random() * 6)],
+                speed: (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 1.5),
+                w: 36,
+                h: 18
+            });
+        }
+        
+        menuBot.x = 100;
+        menuBot.y = 150;
+        menuBot.vy = 0;
+        menuBot.angle = 0;
+        menuBot.grounded = false;
+    }
+
+    // Actualización de la simulación del menú
+    function updateMenuSim() {
+        particles.forEach((p, index) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life--;
+            if (p.life <= 0) particles.splice(index, 1);
+        });
+
+        bgCars.forEach(car => {
+            car.x += car.speed;
+            if (car.x > 20000) car.x = -500;
+            if (car.x < -500) car.x = 20000;
+        });
+
+        menuBot.vy += GRAVITY;
+        menuBot.x += menuBot.vx;
+        menuBot.y += menuBot.vy;
+        menuBot.grounded = false;
+
+        menuPlatforms.forEach(p => {
+            if (menuBot.x < p.x + p.w && menuBot.x + menuBot.width > p.x &&
+                menuBot.y < p.y + p.h && menuBot.y + menuBot.height > p.y) {
+                if (menuBot.vy > 0 && menuBot.y < p.y) { 
+                    menuBot.y = p.y - menuBot.height; 
+                    menuBot.vy = 0; 
+                    menuBot.grounded = true;
+                }
+            }
+        });
+
+        let jumpTriggerDistance = 140; 
+        let shouldJump = false;
+        menuSpikes.forEach(s => {
+            if (s.x > menuBot.x && s.x - menuBot.x < jumpTriggerDistance && menuBot.grounded) {
+                shouldJump = true;
+            }
+        });
+
+        if (shouldJump) {
+            menuBot.vy = JUMP_FORCE;
+            menuBot.grounded = false;
+        }
+
+        if (!menuBot.grounded) {
+            menuBot.angle += 0.15; 
+        } else {
+            let targetAngle = Math.round(menuBot.angle / (Math.PI / 2)) * (Math.PI / 2);
+            menuBot.angle = menuBot.angle * 0.7 + targetAngle * 0.3;
+        }
+
+        menuSpikes.forEach(s => {
+            let sPadding = 4;
+            if (menuBot.x < s.x + s.w - sPadding && menuBot.x + menuBot.width > s.x + sPadding &&
+                menuBot.y < s.y + s.h && menuBot.y + menuBot.height > s.y + sPadding) {
+                triggerExplosion(menuBot.x + menuBot.width/2, menuBot.y + menuBot.height/2, '#00d8d6');
+                menuBot.x = s.x - 300; 
+                menuBot.y = 150;
+                menuBot.vy = 0;
+                menuBot.angle = 0;
+            }
+        });
+
+        menuItems.forEach(en => {
+            if (!en.collected && menuBot.x < en.x + en.w && menuBot.x + menuBot.width > en.x &&
+                menuBot.y < en.y + en.h && menuBot.y + menuBot.height > en.y) {
+                en.collected = true;
+                triggerExplosion(en.x + en.w/2, en.y + en.h/2, en.itemColor);
+            }
+        });
+
+        menuCameraX = menuBot.x - canvas.width / 4;
+        if (menuCameraX < 0) menuCameraX = 0;
+
+        if (menuBot.x > 18000) {
+            initMenuSim();
+        }
+    }
+
+    // Dibujo de la simulación del menú
+    function drawMenuSim() {
+        const menuHue = (Date.now() / 80) % 360; 
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        bgGrad.addColorStop(0, `hsl(${menuHue}, 80%, 75%)`);
+        bgGrad.addColorStop(1, `hsl(${(menuHue + 40) % 360}, 80%, 60%)`);
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        for (let i = 0; i < 4; i++) {
+            let cx = (i * 350 - menuCameraX * 0.1) % (canvas.width + 300) - 150;
+            let cy = 50 + (i % 3) * 30;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+            ctx.arc(cx + 15, cy - 8, 26, 0, Math.PI * 2);
+            ctx.arc(cx + 35, cy, 20, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        ctx.save();
+        ctx.translate(-menuCameraX * 0.35, 0);
+
+        let streetY = 325;
+        let streetH = 45;
+        ctx.fillStyle = '#95a5a6'; 
+        ctx.fillRect(-1000, streetY, 30000, streetH);
+
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 12]);
+        ctx.beginPath();
+        ctx.moveTo(-1000, streetY + streetH / 2);
+        ctx.lineTo(25000, streetY + streetH / 2);
+        ctx.stroke();
+        ctx.setLineDash([]); 
+
+        for (let bx = -1000; bx < 25000; bx += 180) {
+            let heightVal = 35 + (Math.sin(bx * 0.05) * 10);
+            let treeY = streetY - 2;
+            ctx.fillStyle = '#7f5c42';
+            ctx.fillRect(bx + 15, treeY - heightVal, 6, heightVal);
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.arc(bx + 18, treeY - heightVal, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#27ae60'; 
+            ctx.beginPath();
+            ctx.arc(bx + 14, treeY - heightVal + 2, 13, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        bgCars.forEach(car => {
+            drawBgCar(ctx, car);
+        });
+
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(-menuCameraX, 0);
+
+        menuPlatforms.forEach(p => {
+            ctx.fillStyle = '#ff7675'; 
+            ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.strokeStyle = '#2d3436';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(p.x, p.y, p.w, p.h);
+        });
+
+        menuSpikes.forEach(s => {
+            ctx.save();
+            ctx.translate(s.x + s.w/2, s.y + s.h/2);
+            ctx.fillStyle = '#fab1a0';
+            ctx.fillRect(-8, 0, 16, s.h/2);
+            ctx.fillStyle = '#ffeaa7';
+            ctx.beginPath();
+            ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.lineTo(0, -s.h/2);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#2d3436';
+            ctx.beginPath();
+            ctx.moveTo(-3, -s.h/4); ctx.lineTo(3, -s.h/4); ctx.lineTo(0, -s.h/2);
+            ctx.closePath(); ctx.fill();
+            ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 2;
+            ctx.strokeRect(-8, 0, 16, s.h/2);
+            ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(0, -s.h/2); ctx.lineTo(8, 0);
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        menuItems.forEach(en => {
+            if (!en.collected) {
+                drawSchoolItem(ctx, en.x + en.w/2, en.y + en.h/2, en.itemType, en.w);
+            }
+        });
+
+        if (gameState === 'menu') {
+            ctx.save();
+            ctx.translate(menuBot.x + menuBot.width / 2, menuBot.y + menuBot.height / 2);
+            ctx.rotate(menuBot.angle);
+            ctx.fillStyle = '#00d8d6'; 
+            ctx.fillRect(-menuBot.width / 2, -menuBot.height / 2, menuBot.width, menuBot.height);
+            ctx.strokeStyle = '#2d3436';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-menuBot.width / 2, -menuBot.height / 2, menuBot.width, menuBot.height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(2, -10, 8, 8); ctx.fillRect(-10, -10, 8, 8);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(5, -8, 4, 4); ctx.fillRect(-7, -8, 4, 4);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-6, 2, 12, 4);
+            ctx.restore();
+        }
+
+        particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        });
+
+        ctx.restore();
+    }
+
+    function drawBgCar(ctx, car) {
+        ctx.save();
+        ctx.translate(car.x, car.y);
+        ctx.fillStyle = car.color;
+        ctx.beginPath();
+        ctx.roundRect(0, 4, car.w, car.h - 4, 4);
+        ctx.fill();
+        ctx.fillStyle = car.color;
+        ctx.beginPath();
+        ctx.roundRect(6, 0, car.w - 12, 7, 3);
+        ctx.fill();
+        ctx.fillStyle = '#dff9fb';
+        ctx.fillRect(9, 2, 6, 3);
+        ctx.fillRect(car.w - 15, 2, 6, 3);
+        ctx.fillStyle = '#2d3436';
+        ctx.beginPath();
+        ctx.arc(8, car.h, 4.5, 0, Math.PI * 2);
+        ctx.arc(car.w - 8, car.h, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(8, car.h, 1.5, 0, Math.PI * 2);
+        ctx.arc(car.w - 8, car.h, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffeaa7'; 
+        if (car.speed > 0) {
+            ctx.fillRect(car.w - 2, 6, 2, 3);
+        } else {
+            ctx.fillRect(0, 6, 2, 3);
+        }
+        ctx.restore();
+    }
+
+    function buildLevelMenu() {
+        levelGridContainer.innerHTML = '';
+        for (let w = 1; w <= 8; w++) {
+            const worldRow = document.createElement('div');
+            worldRow.className = 'world-row';
+            
+            const title = document.createElement('div');
+            title.className = 'world-title';
+            title.innerText = `Mundo ${w} ${w === 8 ? ' - El Gran Examen Final 🎓' : ''}`;
+            worldRow.appendChild(title);
+            
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'sublevel-buttons';
+            
+            for (let s = 1; s <= 4; s++) {
+                const btn = document.createElement('button');
+                btn.className = 'level-btn';
+                btn.innerText = `${w}-${s}${s === 4 ? ' 👹' : ''}`;
+                btn.onclick = () => selectLevel(w, s);
+                btnGroup.appendChild(btn);
+            }
+            
+            worldRow.appendChild(btnGroup);
+            levelGridContainer.appendChild(worldRow);
+        }
+    }
+
+    function buildShopMenu() {
+        shopGridContainer.innerHTML = '';
+        for (const key in skinsDatabase) {
+            const skin = skinsDatabase[key];
+            const card = document.createElement('div');
+            card.className = `skin-card ${activeSkinId === skin.id ? 'equipped' : ''}`;
+            
+            const preview = document.createElement('div');
+            preview.className = 'skin-preview';
+            preview.style.backgroundColor = skin.color;
+            preview.style.borderRadius = '8px';
+            preview.style.border = '3px solid #fff';
+            
+            if (skin.style === 'bow') {
+                preview.innerHTML = `<div style="position:absolute; top:-10px; left:4px; font-size:14px;">🎀</div>`;
+            } else if (skin.style === 'glasses') {
+                preview.innerHTML = `<div style="position:absolute; top:4px; left:2px; font-size:12px;">👓</div>`;
+            } else if (skin.style === 'headphones') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:-2px; width:44px; height:12px; border:2px solid #fff; border-radius:50%;"></div>`;
+            } else if (skin.style === 'star') {
+                preview.innerHTML = `<div style="position:absolute; top:4px; left:8px; font-size:14px;">⭐</div>`;
+            } else if (skin.style === 'fire') {
+                preview.innerHTML = `<div style="position:absolute; bottom:-4px; left:10px; font-size:12px;">🔥</div>`;
+            } else if (skin.style === 'cap') {
+                preview.innerHTML = `<div style="position:absolute; top:-10px; left:6px; font-size:14px;">🧢</div>`;
+            } else if (skin.style === 'pigtails') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">👧</div>`;
+            } else if (skin.style === 'tie') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">👨‍🏫</div>`;
+            } else if (skin.style === 'palette') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">👩‍🏫</div>`;
+            } else if (skin.style === 'headband') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">🏅</div>`;
+            } else if (skin.style === 'matrix') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">💻</div>`;
+            } else if (skin.style === 'director') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">💼</div>`;
+            } else if (skin.style === 'directora') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">👩‍💼</div>`;
+            } else if (skin.style === 'whistle') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">⚽</div>`;
+            } else if (skin.style === 'uk_flag') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">🇬🇧</div>`;
+            } else if (skin.style === 'ballet') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">🩰</div>`;
+            } else if (skin.style === 'music_note') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">🎵</div>`;
+            } else if (skin.style === 'computer_screen') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">🖥️</div>`;
+            } else if (skin.style === 'teacher_f_general') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">👩‍🏫</div>`;
+            } else if (skin.style === 'teacher_m_general') {
+                preview.innerHTML = `<div style="position:absolute; top:2px; left:8px; font-size:14px;">👨‍🏫</div>`;
+            }
+
+            const name = document.createElement('div');
+            name.className = 'skin-name';
+            name.innerText = skin.name;
+
+            const price = document.createElement('div');
+            price.className = 'skin-price';
+            price.innerText = skin.cost === 0 ? 'Gratis' : `${skin.cost} útiles 🎒`;
+
+            const button = document.createElement('button');
+            button.className = 'shop-btn';
+            
+            if (activeSkinId === skin.id) {
+                button.innerText = 'Equipado';
+                button.classList.add('active-skin');
+            } else if (skin.unlocked) {
+                button.innerText = 'Equipar';
+                button.onclick = () => equipSkin(skin.id);
+            } else {
+                button.innerText = 'Adquirir';
+                if (score >= skin.cost) {
+                    button.onclick = () => buySkin(skin.id);
+                } else {
+                    button.disabled = true;
+                    button.style.opacity = '0.5';
+                    button.style.cursor = 'not-allowed';
+                }
+            }
+
+            card.appendChild(preview);
+            card.appendChild(name);
+            card.appendChild(price);
+            card.appendChild(button);
+            shopGridContainer.appendChild(card);
+        }
+        updateWalletDisplays();
+    }
+
+    function updateWalletDisplays() {
+        walletAmountMain.innerText = score;
+        walletAmountShop.innerText = score;
+    }
+
+    function openMenuSection(section) {
+        document.getElementById('main-menu-options').style.display = 'none';
+        document.getElementById('lecciones-container').style.display = 'none';
+        document.getElementById('tienda-container').style.display = 'none';
+
+        if (section === 'levels') {
+            document.getElementById('lecciones-container').style.display = 'flex';
+            buildLevelMenu();
+        } else if (section === 'shop') {
+            document.getElementById('tienda-container').style.display = 'flex';
+            buildShopMenu();
+        }
+    }
+
+    function backToMainMenuOptions() {
+        document.getElementById('lecciones-container').style.display = 'none';
+        document.getElementById('tienda-container').style.display = 'none';
+        document.getElementById('main-menu-options').style.display = 'flex';
+        updateWalletDisplays();
+    }
+
+    function buySkin(id) {
+        const skin = skinsDatabase[id];
+        if (score >= skin.cost && !skin.unlocked) {
+            score -= skin.cost;
+            skin.unlocked = true;
+            equipSkin(id);
+            buildShopMenu();
+        }
+    }
+
+    function equipSkin(id) {
+        activeSkinId = id;
+        player.color = skinsDatabase[id].color;
+        buildShopMenu();
+    }
+
+    function selectLevel(w, s) {
+        world = w;
+        subLevel = s;
+        menuScreen.style.display = 'none';
+        initLevel(true);
+    }
+
+    function showMainMenu() {
+        gameState = 'menu';
+        menuScreen.style.display = 'flex';
+        messageBox.style.display = 'none';
+        bossUI.style.display = 'none';
+        initMenuSim(); 
+        backToMainMenuOptions(); 
+    }
+
+    function drawSchoolItem(ctx, x, y, type, size) {
+        ctx.save();
+        ctx.translate(x, y);
+        switch (type) {
+            case 'cuaderno':
+                ctx.fillStyle = '#ff7675';
+                ctx.fillRect(-size/2, -size/2, size, size);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-size/2 - 2, -size/2 + 2, 4, size - 4);
+                ctx.fillStyle = '#2d3436';
+                for (let i = -size/2 + 4; i < size/2; i += 6) {
+                    ctx.fillRect(-size/2 - 4, i, 3, 2);
+                }
+                break;
+            case 'lapiz':
+                ctx.rotate(Math.PI / 4);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(-4, -size/2, 8, size - 6);
+                ctx.fillStyle = '#ff9ff3';
+                ctx.fillRect(-4, size/2 - 6, 8, 6);
+                ctx.fillStyle = '#2d3436';
+                ctx.beginPath();
+                ctx.moveTo(-4, -size/2); ctx.lineTo(4, -size/2); ctx.lineTo(0, -size/2 - 5);
+                ctx.closePath(); ctx.fill();
+                break;
+            case 'borrador':
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(-size/2, -size/4, size/2, size/2);
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(0, -size/4, size/2, size/2);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(-size/2, -size/4, size, size/2);
+                break;
+            case 'estuche':
+                ctx.fillStyle = '#9b59b6';
+                ctx.beginPath();
+                ctx.roundRect(-size/2, -size/3, size, (size*2)/3, 6);
+                ctx.fill();
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(-size/2 + 4, -size/3 + 2, size - 8, 3);
+                break;
+            case 'sacapuntas':
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillRect(-size/3, -size/3, (size*2)/3, (size*2)/3);
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(-size/6, -size/6, size/3, size/3);
+                ctx.fillStyle = '#2c3e50';
+                ctx.beginPath();
+                ctx.arc(0, size/4, 4, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+            case 'libro':
+                ctx.fillStyle = '#2ecc71';
+                ctx.fillRect(-size/2, -size/2, size, size);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(-size/2 + 3, -size/2 + 3, size - 6, size - 3);
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(-size/2 + 6, -5, size - 12, 2);
+                ctx.fillRect(-size/2 + 6, 1, size - 12, 2);
+                break;
+            case 'pluma':
+                ctx.rotate(-Math.PI / 6);
+                ctx.fillStyle = '#2980b9';
+                ctx.fillRect(-2, -size/2, 4, size);
+                ctx.fillStyle = '#34495e';
+                ctx.fillRect(-3, -size/2, 6, 8);
+                break;
+        }
+        ctx.restore();
+    }
+
+    function drawAsisShield(ctx, x, y, size) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#f1c40f'; 
+        ctx.fillStyle = '#ffffff';   
+        ctx.beginPath();
+        ctx.moveTo(-size/2, -size/2);
+        ctx.lineTo(size/2, -size/2);
+        ctx.lineTo(size/2, size/4);
+        ctx.quadraticCurveTo(size/2, size/2, 0, size/2 + size/6); 
+        ctx.quadraticCurveTo(-size/2, size/2, -size/2, size/4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(-size/2, -size/2);
+        ctx.lineTo(size/2, -size/2);
+        ctx.lineTo(size/2, size/4);
+        ctx.quadraticCurveTo(size/2, size/2, 0, size/2 + size/6);
+        ctx.quadraticCurveTo(-size/2, size/2, -size/2, size/4);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.fillStyle = '#2980b9';
+        ctx.beginPath();
+        ctx.moveTo(-size, -size); ctx.lineTo(size, -size); ctx.lineTo(-size, size);
+        ctx.closePath(); ctx.fill();
+
+        ctx.fillStyle = '#2d3436';
+        ctx.beginPath();
+        ctx.moveTo(size, size); ctx.lineTo(size, -size * 0.1); ctx.lineTo(-size * 0.1, size);
+        ctx.closePath(); ctx.fill();
+
+        ctx.strokeStyle = '#f1c40f'; 
+        ctx.lineWidth = 4;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(-size, -size * 0.2); ctx.lineTo(size * 0.2, -size); ctx.lineTo(size, -size * 0.4); ctx.lineTo(-size * 0.4, size);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+
+        ctx.strokeStyle = '#d35400'; 
+        ctx.lineWidth = 3.5;
+        ctx.beginPath(); ctx.moveTo(0, -size/3); ctx.lineTo(0, size/3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(-size/4, -size/8); ctx.lineTo(size/4, -size/8); ctx.stroke();
+
+        ctx.fillStyle = '#f1c40f';
+        ctx.beginPath(); ctx.arc(0, -size/3, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
+    function generateLevel(w, s) {
+        platforms = [];
+        entities = [];
+        particles = [];
+        floatingTexts = [];
+        bgCars = [];
+        boss = null;
+        victoryFigure = null;
+        isCastle = (s === 4);
+        bossUI.style.display = 'none';
+        player.dead = false;
+        player.angle = 0;
+
+        platforms.push({ x: 0, y: 380, w: 1000, h: 100 });
+        
+        let currentX = 1000;
+        levelLength = isCastle ? 3400 : (3600 + (w * 500));
+        const gapProbability = isCastle ? 0.38 : (0.24 + (w * 0.04));
+        
+        while (currentX < levelLength - 1100) {
+            let sectionWidth = 220 + Math.random() * 250;
+            let sectionY = 320 + (Math.sin(currentX) * 30);
+            
+            if (Math.random() < gapProbability && currentX > 1100) {
+                currentX += 150 + (w * 8); 
+            }
+
+            platforms.push({ x: currentX, y: sectionY, w: sectionWidth, h: 500 });
+
+            if (Math.random() > 0.35) {
+                entities.push({ type: 'spike', x: currentX + 80, y: sectionY - 28, w: 24, h: 28 });
+            }
+            if (w > 2 && Math.random() > 0.7) {
+                entities.push({ type: 'spike', x: currentX + 110, y: sectionY - 28, w: 24, h: 28 });
+            }
+
+            if (Math.random() > 0.35) {
+                const randomItem = schoolItems[Math.floor(Math.random() * schoolItems.length)];
+                entities.push({
+                    type: 'collectible',
+                    itemType: randomItem.type,
+                    itemName: randomItem.name,
+                    itemColor: randomItem.color,
+                    x: currentX + 160,
+                    y: sectionY - 60 - (Math.random() * 60),
+                    w: 24,
+                    h: 24,
+                    collected: false
+                });
+            }
+            currentX += sectionWidth;
+        }
+
+        let totalCars = Math.floor(levelLength / 400);
+        for (let i = 0; i < totalCars; i++) {
+            bgCars.push({
+                x: i * 400 + Math.random() * 150,
+                y: 335,
+                color: ['#ff7675', '#f1c40f', '#9b59b6', '#ffbe76', '#1abc9c', '#74b9ff'][Math.floor(Math.random() * 6)],
+                speed: (Math.random() > 0.5 ? 1 : -1) * (1.2 + Math.random() * 1.5),
+                w: 36,
+                h: 18
+            });
+        }
+
+        const finalPlatformX = currentX;
+        platforms.push({ x: finalPlatformX, y: 350, w: 1400, h: 150 });
+
+        if (isCastle) {
+            boss = {
+                x: finalPlatformX + 450,
+                y: 220, 
+                w: 75,
+                h: 130, 
+                targetY: 220,
+                attackTimer: 45,
+                hp: 3,
+                maxHp: 3,
+                active: false
+            };
+
+            entities.push({ type: 'energy_orb', x: finalPlatformX + 200, y: 240, w: 30, h: 30, used: false, id: 1 });
+            entities.push({ type: 'energy_orb', x: finalPlatformX + 450, y: 200, w: 30, h: 30, used: false, id: 2 });
+            entities.push({ type: 'energy_orb', x: finalPlatformX + 700, y: 240, w: 30, h: 30, used: false, id: 3 });
+        }
+
+        entities.push({ type: 'goal', x: finalPlatformX + 1150, y: 290, w: 45, h: 60, locked: isCastle });
+    }
+
+    function initLevel(fullReset = false) {
+        lives = 3;
+        generateLevel(world, subLevel);
+        cameraX = 0;
+        player.x = 100;
+        player.y = 150;
+        
+        if (subLevel === 4) {
+            player.vx = AUTO_SPEED + (8 * 0.35); 
+        } else {
+            player.vx = AUTO_SPEED + (world * 0.35); 
+        }
+        player.vy = 0;
+        
+        if (isCastle) {
+            document.querySelector('#boss-ui div').innerText = "EL TELÉFONO DISTRACTOR GIGANTE";
+        }
+        
+        updateUI();
+        messageBox.style.display = 'none';
+        gameState = 'playing';
+    }
+
+    function updateUI() {
+        livesElement.innerHTML = '♥'.repeat(lives);
+        levelElement.innerText = `${world}-${subLevel}`;
+    }
+
+    let isJumpingPressed = false;
+
+    window.addEventListener('keydown', e => {
+        if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+            isJumpingPressed = true;
+        }
+        if (e.code === 'Escape') {
+            showMainMenu();
+        }
+    });
+
+    window.addEventListener('keyup', e => {
+        if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+            isJumpingPressed = false;
+        }
+    });
+
+    canvas.addEventListener('mousedown', () => { isJumpingPressed = true; });
+    canvas.addEventListener('mouseup', () => { isJumpingPressed = false; });
+    canvas.addEventListener('touchstart', (e) => { isJumpingPressed = true; e.preventDefault(); }, {passive: false});
+    canvas.addEventListener('touchend', () => { isJumpingPressed = false; });
+
+    function triggerExplosion(x, y, color) {
+        for (let i = 0; i < 20; i++) {
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 11, vy: (Math.random() - 0.5) * 11,
+                size: Math.random() * 5 + 3, life: 30, color: color
+            });
+        }
+    }
+
+    function addFloatingText(x, y, text, color) {
+        floatingTexts.push({ x: x, y: y, text: text, color: color, vy: -2, opacity: 1.0, life: 45 });
+    }
+
+    function handleDeath() {
+        if (player.dead) return;
+        player.dead = true;
+        triggerExplosion(player.x + player.width / 2, player.y + player.height / 2, player.color);
+        lives--;
+        updateUI();
+
+        setTimeout(() => {
+            if (lives <= 0) {
+                gameState = 'ended';
+                msgTitle.innerText = "¡RECREO TERMINADO!";
+                msgTitle.style.color = "#ff4757";
+                msgBody.innerText = `Te desintegraste camino al colegio en el nivel ${world}-${subLevel}.\n🎒 Total de Útiles: ${score}`;
+                mainBtn.innerText = "REINTENTAR CLASE";
+                messageBox.style.display = 'block';
+            } else {
+                initLevel(false);
+            }
+        }, 800);
+    }
+
+    function handleButtonClick() {
+        if (lives <= 0) {
+            initLevel(false);
+        } else if (world === 8 && subLevel === 4 && gameState === 'ended') {
+            showMainMenu();
+        } else if (gameState === 'ended') {
+            subLevel++;
+            if (subLevel > 4) { subLevel = 1; world++; }
+            if (world > 8) { showMainMenu(); } else { initLevel(false); }
+        }
+    }
+
+    function update() {
+        if (gameState === 'menu') {
+            updateMenuSim();
+            return;
+        }
+
+        particles.forEach((p, index) => {
+            p.x += p.vx; p.y += p.vy; p.life--;
+            if (p.life <= 0) particles.splice(index, 1);
+        });
+
+        bgCars.forEach(car => {
+            car.x += car.speed;
+            if (car.x > levelLength + 500) car.x = -500;
+            if (car.x < -500) car.x = levelLength + 500;
+        });
+
+        floatingTexts.forEach((ft, index) => {
+            ft.y += ft.vy; ft.opacity -= 0.02; ft.life--;
+            if (ft.life <= 0) floatingTexts.splice(index, 1);
+        });
+
+        if (gameState !== 'playing' || player.dead) return;
+
+        if (isJumpingPressed && player.grounded) {
+            player.vy = JUMP_FORCE;
+            player.grounded = false;
+        }
+
+        player.vy += GRAVITY;
+        player.x += player.vx;
+        player.y += player.vy;
+
+        if (!player.grounded) {
+            player.angle += 0.15; 
+        } else {
+            let targetAngle = Math.round(player.angle / (Math.PI / 2)) * (Math.PI / 2);
+            player.angle = player.angle * 0.7 + targetAngle * 0.3;
+        }
+
+        player.grounded = false;
+
+        platforms.forEach(p => {
+            if (player.x < p.x + p.w && player.x + player.width > p.x &&
+                player.y < p.y + p.h && player.y + player.height > p.y) {
+                let oX = Math.min(player.x + player.width - p.x, p.x + p.w - player.x);
+                let oY = Math.min(player.y + player.height - p.y, p.y + p.h - player.y);
+                if (oX > oY) {
+                    if (player.vy > 0 && player.y < p.y) { 
+                        player.y = p.y - player.height; 
+                        player.vy = 0; 
+                        player.grounded = true;
+                    } else if (player.vy < 0 && player.y > p.y) { handleDeath(); }
+                } else {
+                    if (player.vx > 0 && player.x < p.x) { handleDeath(); }
+                }
+            }
+        });
+
+        if (boss) {
+            if (!boss.active && player.x > boss.x - 500) {
+                boss.active = true;
+                bossUI.style.display = 'block';
+                bossBarFill.style.width = '100%';
+            }
+
+            if (boss.active) {
+                boss.x = finalPlatformX + 960; 
+                boss.y = 220 + Math.sin(Date.now() / 30) * 2; 
+
+                boss.attackTimer--;
+                if (boss.attackTimer <= 0) {
+                    let attackHeight = Math.random() > 0.5 ? 'high' : 'low';
+                    let projectileY = (attackHeight === 'high') ? boss.y + 15 : boss.y + boss.h - 35;
+
+                    entities.push({
+                        type: 'boss_projectile',
+                        x: boss.x - 20,
+                        y: projectileY,
+                        w: 24, h: 24,
+                        vx: -11 
+                    });
+                    boss.attackTimer = 50 - (world * 4); 
+                }
+            }
+        }
+
+        entities.forEach((en, index) => {
+            if (en.type === 'boss_projectile') {
+                en.x += en.vx;
+                if (player.x < en.x + en.w && player.x + player.width > en.x &&
+                    player.y < en.y + en.h && player.y + player.height > en.y) {
+                    handleDeath();
+                }
+            }
+
+            if (en.type === 'spike') {
+                let sPadding = 4;
+                if (player.x < en.x + en.w - sPadding && player.x + player.width > en.x + sPadding &&
+                    player.y < en.y + en.h && player.y + player.height > en.y + sPadding) {
+                    handleDeath();
+                }
+            }
+
+            if (en.type === 'collectible' && !en.collected) {
+                if (player.x < en.x + en.w && player.x + player.width > en.x &&
+                    player.y < en.y + en.h && player.y + player.height > en.y) {
+                    en.collected = true;
+                    score++;
+                    triggerExplosion(en.x + en.w/2, en.y + en.h/2, en.itemColor);
+                    addFloatingText(en.x, en.y, `+1 ${en.itemName}`, en.itemColor);
+                    updateWalletDisplays();
+                }
+            }
+
+            if (en.type === 'energy_orb' && !en.used) {
+                if (player.x < en.x + en.w && player.x + player.width > en.x &&
+                    player.y < en.y + en.h && player.y + player.height > en.y) {
+                    en.used = true;
+                    triggerExplosion(en.x + en.w/2, en.y + en.h/2, '#00d8d6');
+                    player.vy = JUMP_FORCE * 0.85;
+
+                    if (boss) {
+                        boss.hp--;
+                        bossBarFill.style.width = (boss.hp / boss.maxHp * 100) + '%';
+                        if (boss.hp <= 0) {
+                            triggerExplosion(boss.x + boss.w/2, boss.y + boss.h/2, '#ff4757');
+                            victoryFigure = { x: boss.x - 50, y: 310, type: (world === 8 && subLevel === 4) ? 'rosa' : 'estrella_geometrica' };
+                            boss = null;
+                            bossUI.style.display = 'none';
+                            entities.forEach(e => { if(e.type === 'goal') e.locked = false; });
+                        }
+                    }
+                }
+            }
+
+            if (en.type === 'goal') {
+                if (player.x < en.x + en.w && player.x + player.width > en.x &&
+                    player.y < en.y + en.h && player.y + player.height > en.y) {
+                    if (!en.locked) {
+                        gameState = 'ended';
+                        if (world === 8 && subLevel === 4) {
+                            msgTitle.innerText = "¡EXAMEN FINAL APROBADO!";
+                            msgTitle.style.color = "#20bf6b";
+                            msgBody.innerText = `¡Eres libre de la escuela con una puntuación de ${score} útiles recolectados!`;
+                            mainBtn.innerText = "VOLVER AL MENÚ";
+                        } else {
+                            msgTitle.innerText = isCastle ? `¡EXAMEN MUNDO ${world} OK!` : `LECCIÓN ${world}-${subLevel} COMPLETA`;
+                            msgTitle.style.color = "#2ecc71";
+                            msgBody.innerText = `Llegaste sano y salvo a clases. Útiles totales guardados: ${score}`;
+                            mainBtn.innerText = "SIGUIENTE CLASE";
+                        }
+                        messageBox.style.display = 'block';
+                    }
+                }
+            }
+        });
+
+        cameraX = player.x - canvas.width / 4;
+        if (cameraX < 0) cameraX = 0;
+        if (player.y > canvas.height + 50) { handleDeath(); }
+
+        let progressPercent = Math.min(100, Math.floor((player.x / (levelLength - 400)) * 100));
+        if (progressPercent < 0) progressPercent = 0;
+        progressBarFill.style.width = progressPercent + '%';
+        progressText.innerText = progressPercent + '%';
+    }
+
+    let finalPlatformX = 3000;
+
+    function draw() {
+        if (gameState === 'menu') {
+            drawMenuSim();
+            return;
+        }
+
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        if (isCastle) {
+            bgGrad.addColorStop(0, '#fdcb6e'); 
+            bgGrad.addColorStop(1, '#ff7675');
+        } else {
+            bgGrad.addColorStop(0, '#74b9ff'); 
+            bgGrad.addColorStop(1, '#81ecec');
+        }
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+        for (let i = 0; i < 6; i++) {
+            let cx = (i * 350 - cameraX * 0.15) % (canvas.width + 300) - 150;
+            let cy = 40 + (i % 3) * 35;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+            ctx.arc(cx + 20, cy - 10, 32, 0, Math.PI * 2);
+            ctx.arc(cx + 42, cy, 25, 0, Math.PI * 2);
+            ctx.closePath(); ctx.fill();
+        }
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+        ctx.lineWidth = 1.5;
+        for (let y = 35; y < canvas.height; y += 35) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.translate(-cameraX * 0.35, 0);
+
+        let streetY = 325;
+        let streetH = 45;
+        ctx.fillStyle = '#95a5a6'; 
+        ctx.fillRect(-1000, streetY, levelLength + 3000, streetH);
+
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 12]);
+        ctx.beginPath(); ctx.moveTo(-1000, streetY + streetH / 2); ctx.lineTo(levelLength + 3000, streetY + streetH / 2); ctx.stroke();
+        ctx.setLineDash([]); 
+
+        for (let bx = -1000; bx < levelLength + 3000; bx += 180) {
+            let heightVal = 35 + (Math.sin(bx * 0.05) * 10);
+            let treeY = streetY - 2;
+            ctx.fillStyle = '#7f5c42'; ctx.fillRect(bx + 15, treeY - heightVal, 6, heightVal);
+            ctx.fillStyle = '#2ecc71'; ctx.beginPath(); ctx.arc(bx + 18, treeY - heightVal, 16, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#27ae60'; ctx.beginPath(); ctx.arc(bx + 14, treeY - heightVal + 2, 13, 0, Math.PI * 2); ctx.fill();
+        }
+
+        bgCars.forEach(car => { drawBgCar(ctx, car); });
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(-cameraX, 0);
+
+        platforms.forEach(p => {
+            const pastelColors = ['#fab1a0', '#74b9ff', '#55efc4', '#ffeaa7', '#a29bfe', '#ffeaa7', '#ffbe76', '#ff7675'];
+            let blockColor = pastelColors[(world-1) % pastelColors.length];
+            ctx.fillStyle = blockColor; ctx.fillRect(p.x, p.y, p.w, p.h);
+            ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 4; ctx.strokeRect(p.x, p.y, p.w, p.h);
+            ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(p.x + 10, p.y + 10, p.w - 20, 10);
+            if (p.x > 2000) { finalPlatformX = p.x; }
+        });
+
+        entities.forEach(en => {
+            if (en.type === 'spike') {
+                ctx.save();
+                ctx.translate(en.x + en.w/2, en.y + en.h/2);
+                ctx.fillStyle = '#ff7675'; ctx.fillRect(-8, 0, 16, en.h/2);
+                ctx.fillStyle = '#ffeaa7'; ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.lineTo(0, -en.h/2); ctx.closePath(); ctx.fill();
+                ctx.fillStyle = '#2d3436'; ctx.beginPath(); ctx.moveTo(-3, -en.h/4); ctx.lineTo(3, -en.h/4); ctx.lineTo(0, -en.h/2); ctx.closePath(); ctx.fill();
+                ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 2; ctx.strokeRect(-8, 0, 16, en.h/2);
+                ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(0, -en.h/2); ctx.lineTo(8, 0); ctx.stroke();
+                ctx.restore();
+            } else if (en.type === 'boss_projectile') {
+                ctx.fillStyle = '#e74c3c'; 
+                ctx.beginPath(); ctx.roundRect(en.x, en.y, en.w, en.h, 6); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = "bold 13px 'Segoe UI'"; ctx.textAlign = "center";
+                ctx.fillText("1", en.x + en.w/2, en.y + en.h/2 + 4);
+            } else if (en.type === 'collectible' && !en.collected) {
+                drawSchoolItem(ctx, en.x + en.w/2, en.y + en.h/2, en.itemType, en.w);
+            } else if (en.type === 'energy_orb' && !en.used) {
+                ctx.fillStyle = '#fdcb6e'; ctx.beginPath(); ctx.arc(en.x + en.w/2, en.y + en.h/2, en.w/2, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
+            } else if (en.type === 'goal') {
+                let bx = en.x - 90; let by = en.y - 110; let bw = 220; let bh = 170;
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, bw, bh);
+                ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 4; ctx.strokeRect(bx, by, bw, bh);
+                ctx.fillStyle = '#0984e3'; ctx.beginPath(); ctx.moveTo(bx - 15, by); ctx.lineTo(bx + bw/2, by - 55); ctx.lineTo(bx + bw + 15, by); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#1e3799'; ctx.fillRect(bx + bw/2 - 20, by - 85, 40, 30); ctx.strokeRect(bx + bw/2 - 20, by - 85, 40, 30);
+                ctx.fillStyle = '#fdcb6e'; ctx.beginPath(); ctx.arc(bx + bw/2, by - 70, 8, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#74b9ff'; ctx.fillRect(bx + 30, by + 30, 35, 35); ctx.strokeRect(bx + 30, by + 30, 35, 35);
+                ctx.fillRect(bx + bw - 65, by + 30, 35, 35); ctx.strokeRect(bx + bw - 65, by + 30, 35, 35);
+                ctx.beginPath(); ctx.moveTo(bx + 47, by + 30); ctx.lineTo(bx + 47, by + 65); ctx.moveTo(bx + 30, by + 47); ctx.lineTo(bx + 65, by + 47);
+                ctx.moveTo(bx + bw - 47, by + 30); ctx.lineTo(bx + bw - 47, by + 65); ctx.moveTo(bx + bw - 65, by + 47); ctx.lineTo(bx + bw - 30, by + 47); ctx.stroke();
+                ctx.fillStyle = '#2d3436'; ctx.font = "bold 13px 'Segoe UI'"; ctx.textAlign = 'center'; ctx.fillText("Instituto Asis", bx + bw/2, by + 105);
+                drawAsisShield(ctx, bx + bw/2, by + 45, 32);
+                ctx.fillStyle = en.locked ? '#d63031' : '#2ecc71'; ctx.fillRect(en.x, en.y, en.w, en.h); ctx.strokeRect(en.x, en.y, en.w, en.h);
+                if (!en.locked) { ctx.fillStyle = '#fff'; ctx.font = "bold 11px sans-serif"; ctx.fillText("ENTRA", en.x + en.w/2, en.y - 10); }
+            }
+        });
+
+        if (victoryFigure) {
+            ctx.save(); ctx.translate(victoryFigure.x, victoryFigure.y);
+            if (victoryFigure.type === 'rosa') {
+                ctx.fillStyle = "#ff69b4"; ctx.fillRect(-20, -20, 40, 40);
+                ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.moveTo(-12, -24); ctx.lineTo(-4, -18); ctx.lineTo(-12, -12); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(12, -24); ctx.lineTo(4, -18); ctx.lineTo(12, -12); ctx.fill();
+                ctx.fillStyle = "#ff1493"; ctx.beginPath(); ctx.arc(0, -18, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#000000"; ctx.fillRect(-8, -4, 4, 6); ctx.fillRect(4, -4, 4, 6);
+            } else {
+                ctx.fillStyle = '#ffd32a'; ctx.beginPath(); ctx.arc(0, 0, 18, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        if (boss && boss.active) {
+            ctx.save();
+            ctx.fillStyle = '#1e272e'; ctx.strokeStyle = '#eccc68'; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.roundRect(boss.x, boss.y, boss.w, boss.h, 12); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#74b9ff'; ctx.beginPath(); ctx.roundRect(boss.x + 6, boss.y + 14, boss.w - 12, boss.h - 28, 6); ctx.fill();
+            ctx.fillStyle = '#2d3436'; ctx.fillRect(boss.x + boss.w / 2 - 12, boss.y + 5, 24, 3);
+            ctx.beginPath(); ctx.arc(boss.x + boss.w / 2 + 18, boss.y + 6, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#57606f'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(boss.x + boss.w / 2, boss.y + boss.h - 7, 4, 0, Math.PI * 2); ctx.stroke();
+            ctx.fillStyle = '#ff7675'; ctx.fillRect(boss.x + 12, boss.y + 22, 10, 10);
+            ctx.fillStyle = '#2ecc71'; ctx.fillRect(boss.x + 28, boss.y + 22, 10, 10);
+            ctx.fillStyle = '#f1c40f'; ctx.fillRect(boss.x + 44, boss.y + 22, 10, 10);
+            ctx.fillStyle = '#2d3436'; ctx.font = "bold 26px Arial"; ctx.textAlign = "center"; ctx.fillText("😠", boss.x + boss.w / 2, boss.y + boss.h / 2 + 12);
+            ctx.restore();
+        }
+
+        if (!player.dead) {
+            ctx.save();
+            ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+            ctx.rotate(player.angle);
+            ctx.fillStyle = player.color; ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
+            ctx.strokeStyle = '#2d3436'; ctx.lineWidth = 3; ctx.strokeRect(-player.width / 2, -player.height / 2, player.width, player.height);
+
+            const currentStyle = skinsDatabase[activeSkinId].style;
+            if (currentStyle === 'bow') {
+                ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.moveTo(-10, -18); ctx.lineTo(-3, -14); ctx.lineTo(-10, -10); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(10, -18); ctx.lineTo(3, -14); ctx.lineTo(10, -10); ctx.fill();
+                ctx.fillStyle = "#ff1493"; ctx.beginPath(); ctx.arc(0, -14, 3, 0, Math.PI*2); ctx.fill();
+            } else if (currentStyle === 'glasses') {
+                ctx.fillStyle = "#2d3436"; ctx.fillRect(-12, -8, 8, 4); ctx.fillRect(4, -8, 8, 4); ctx.fillRect(-4, -6, 8, 1);
+            } else if (currentStyle === 'headphones') {
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, player.width/2 + 2, Math.PI, 0); ctx.stroke();
+                ctx.fillStyle = "#eccc68"; ctx.fillRect(-player.width/2 - 3, -4, 3, 8); ctx.fillRect(player.width/2, -4, 3, 8);
+            } else if (currentStyle === 'star') {
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill();
+            } else if (currentStyle === 'fire') {
+                ctx.fillStyle = "#e17055"; ctx.beginPath(); ctx.moveTo(-5, 14); ctx.lineTo(0, 5); ctx.lineTo(5, 14); ctx.closePath(); ctx.fill();
+            } else if (currentStyle === 'cap') {
+                ctx.fillStyle = "#2980b9"; ctx.fillRect(-12, -18, 24, 6); ctx.fillStyle = "#e74c3c"; ctx.fillRect(4, -16, 12, 3);
+            } else if (currentStyle === 'pigtails') {
+                ctx.fillStyle = "#d35400"; ctx.beginPath(); ctx.arc(-16, -4, 5, 0, Math.PI*2); ctx.arc(16, -4, 5, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#ff7675"; ctx.fillRect(-15, -6, 2, 4); ctx.fillRect(13, -6, 2, 4);
+            } else if (currentStyle === 'tie') {
+                ctx.fillStyle = "#c0392b"; ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(-4, 6); ctx.lineTo(0, 14); ctx.lineTo(4, 6); ctx.closePath(); ctx.fill();
+            } else if (currentStyle === 'palette') {
+                ctx.fillStyle = "#8e44ad"; ctx.beginPath(); ctx.arc(-8, -16, 4, 0, Math.PI*2); ctx.arc(8, -16, 4, 0, Math.PI*2); ctx.fill();
+            } else if (currentStyle === 'headband') {
+                ctx.fillStyle = "#ffffff"; ctx.fillRect(-player.width/2, -12, player.width, 5); ctx.fillStyle = "#e74c3c"; ctx.fillRect(-5, -12, 10, 5);
+            } else if (currentStyle === 'matrix') {
+                ctx.fillStyle = "#2ecc71"; ctx.fillRect(-12, -8, 24, 3); ctx.fillStyle = "#27ae60"; ctx.fillRect(-10, -8, 6, 3); ctx.fillRect(4, -8, 6, 3);
+            } else if (currentStyle === 'director') {
+                ctx.fillStyle = "#ffffff"; ctx.fillRect(-5, 6, 10, 9);
+                ctx.fillStyle = "#2d3436"; ctx.beginPath(); ctx.moveTo(-6, 8); ctx.lineTo(-1, 10); ctx.lineTo(-6, 12); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(6, 8); ctx.lineTo(1, 10); ctx.lineTo(6, 12); ctx.closePath(); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, 10, 2.5, 0, Math.PI*2); ctx.fill();
+            } else if (currentStyle === 'directora') {
+                ctx.fillStyle = "#ffeaa7"; ctx.beginPath(); for (let dx = -9; dx <= 9; dx += 4.5) { ctx.arc(dx, 8, 2, 0, Math.PI * 2); }
+                ctx.fillStyle = "#ffffff"; ctx.fill();
+                ctx.fillStyle = "#f1c40f"; ctx.beginPath(); ctx.arc(-14, 0, 2.5, 0, Math.PI*2); ctx.arc(14, 0, 2.5, 0, Math.PI*2); ctx.fill();
+            } else if (currentStyle === 'whistle') {
+                ctx.fillStyle = "#bdc3c7"; ctx.fillRect(-4, 4, 8, 6); ctx.beginPath(); ctx.arc(0, 10, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.strokeRect(-4, 4, 8, 6);
+            } else if (currentStyle === 'uk_flag') {
+                ctx.fillStyle = "#2980b9"; ctx.fillRect(-6, -6, 12, 8);
+                ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(6, -2); ctx.moveTo(0, -6); ctx.lineTo(0, 2); ctx.stroke();
+                ctx.strokeStyle = "#e74c3c"; ctx.stroke();
+            } else if (currentStyle === 'ballet') {
+                ctx.fillStyle = "#ff7979"; ctx.beginPath(); ctx.moveTo(-10, -18); ctx.lineTo(-3, -15); ctx.lineTo(-10, -12); ctx.fill();
+                ctx.beginPath(); ctx.moveTo(10, -18); ctx.lineTo(3, -15); ctx.lineTo(10, -12); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, -15, 3, 0, Math.PI * 2); ctx.fill();
+            } else if (currentStyle === 'music_note') {
+                ctx.fillStyle = "#2d3436"; ctx.beginPath(); ctx.arc(-4, -14, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillRect(-1, -22, 2, 9); ctx.fillRect(-1, -22, 6, 2);
+            } else if (currentStyle === 'computer_screen') {
+                ctx.fillStyle = "#00b894"; ctx.fillRect(-10, -8, 8, 6); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 1; ctx.strokeRect(-10, -8, 8, 6);
+            } else if (currentStyle === 'teacher_f_general') {
+                ctx.fillStyle = "#e74c3c"; ctx.fillRect(-11, -8, 8, 3); ctx.fillRect(3, -8, 8, 3); ctx.fillRect(-3, -7, 6, 1);
+                ctx.fillStyle = "#4a2711"; ctx.beginPath(); ctx.arc(0, -17, 7, 0, Math.PI * 2); ctx.fill();
+            } else if (currentStyle === 'teacher_m_general') {
+                ctx.fillStyle = "#2c3e50"; ctx.fillRect(-11, -8, 8, 3); ctx.fillRect(3, -8, 8, 3); ctx.fillRect(-3, -7, 6, 1);
+                ctx.fillStyle = "#2980b9"; ctx.beginPath(); ctx.moveTo(0, 2); ctx.lineTo(-3, 5); ctx.lineTo(0, 12); ctx.lineTo(3, 5); ctx.closePath(); ctx.fill();
+            }
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(2, -10, 8, 8); ctx.fillRect(-10, -10, 8, 8);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(5, -8, 4, 4); ctx.fillRect(-7, -8, 4, 4);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-6, 2, 12, 4);
+            ctx.restore();
+        }
+
+        particles.forEach(p => {
+            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size);
+        });
+
+        floatingTexts.forEach(ft => {
+            ctx.fillStyle = `rgba(${hexToRgb(ft.color)}, ${ft.opacity})`;
+            ctx.font = "bold 14px 'Segoe UI'"; ctx.fillText(ft.text, ft.x, ft.y);
+        });
+
+        ctx.restore();
+    }
+
+    function hexToRgb(hex) {
+        var c;
+        if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+            c= hex.substring(1).split('');
+            if(c.length== 3){ c= [c[0], c[0], c[1], c[1], c[2], c[2]]; }
+            c= '0x' + c.join('');
+            return [(c>>16)&255, (c>>8)&255, c&255].join(',');
+        }
+        return "255,255,255";
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    window.onload = () => {
+        initMenuSim();
+        buildLevelMenu();
+        buildShopMenu();
+        loop();
+    };
+</script>
+</body>
+</html>
+
